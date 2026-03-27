@@ -1,0 +1,22 @@
+# ══ NUNCA subir a git ══
+.env
+mosquitto/config/passwd
+mosquitto/data/
+mosquitto/log/
+backups/
+nginx/certs/
+
+# ══ Archivos temporales ══
+*.pyc
+__pycache__/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# ══ Sistema operativo ══
+.DS_Store
+Thumbs.db
+*.swp

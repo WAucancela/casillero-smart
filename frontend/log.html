@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log | Casilleros</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
+  <link rel="stylesheet" href="css/shared.css">
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <ul class="navbar-nav"><li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a></li></ul>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item"><span class="nav-link"><span class="live-dot"></span><small id="reloj" class="mono"></small></span></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="API.auth.logout()"><i class="fas fa-sign-out-alt"></i></a></li>
+    </ul>
+  </nav>
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <a href="dashboard.html" class="brand-link"><i class="fas fa-lock brand-image ml-1" style="color:#007bff;font-size:1.4rem;"></i><span class="brand-text font-weight-bold">CASILLEROS</span></a>
+    <div class="sidebar">
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image"><i class="fas fa-user-shield fa-lg text-secondary ml-2 mt-1"></i></div>
+        <div class="info"><a href="#" class="d-block" id="sidebar-nombre">Administrador</a><small id="sidebar-email" class="text-muted d-block"></small><small id="sidebar-rol" class="badge" style="font-size:9px;"></small></div>
+      </div>
+      <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" id="sidebar-nav"></ul></nav>
+    </div>
+  </aside>
+
+  <div class="content-wrapper">
+    <div class="content-header"><div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6"><h1 class="m-0"><i class="fas fa-list-alt mr-2 text-primary"></i>Log Completo de Accesos</h1></div>
+        <div class="col-sm-6"><ol class="breadcrumb float-sm-right"><li class="breadcrumb-item"><a href="dashboard.html">Inicio</a></li><li class="breadcrumb-item active">Log</li></ol></div>
+      </div>
+    </div></div>
+
+    <div class="content"><div class="container-fluid">
+      <div class="filter-bar">
+        <div class="form-group"><label>Desde</label>
+          <input id="f-desde" type="date" class="form-control form-control-sm" style="width:140px;" onchange="cargarLog()">
+        </div>
+        <div class="form-group"><label>Hasta</label>
+          <input id="f-hasta" type="date" class="form-control form-control-sm" style="width:140px;" onchange="cargarLog()">
+        </div>
+        <div class="form-group"><label>Resultado</label>
+          <select id="f-resultado" class="form-control form-control-sm" style="width:170px;" onchange="cargarLog()">
+            <option value="">Todos</option>
+            <option value="exitoso">Exitoso</option>
+            <option value="denegado_biometria">Denegado biometría</option>
+            <option value="denegado_usuario_inactivo">Usuario inactivo</option>
+            <option value="denegado_fuera_horario">Fuera de horario</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="resetFiltros()"><i class="fas fa-undo mr-1"></i>Limpiar</button>
+        <div class="ml-auto d-flex" style="gap:8px;">
+          <button class="btn btn-outline-success btn-sm" onclick="exportCSV()"><i class="fas fa-file-csv mr-1"></i>CSV</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="cargarLog()"><i class="fas fa-sync mr-1"></i>Actualizar</button>
+        </div>
+      </div>
+
+      <div class="card card-outline card-secondary elevation-2">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-database mr-2"></i>Historial de Accesos</h3>
+          <div class="card-tools"><span class="badge badge-secondary mono" id="badge-total">—</span></div>
+        </div>
+        <div class="card-body p-0" id="log-container">
+          <div class="text-center py-5 text-muted"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+          <small class="text-muted" id="pag-info"></small>
+          <nav><ul class="pagination pagination-sm mb-0" id="paginacion"></ul></nav>
+        </div>
+      </div>
+    </div></div>
+  </div>
+  <footer class="main-footer"><strong>Casilleros Automatizados</strong> &copy; 2026</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/js/adminlte.min.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/layout.js"></script>
+<script>
+if (!requireAuth()) throw new Error("no auth");
+renderLayout("log");
+iniciarReloj();
+
+let logsData = [];
+let pagina   = 0;
+const PER_PAG = 20;
+
+const hoy    = new Date().toISOString().slice(0,10);
+const hace7  = new Date(Date.now()-7*24*3600000).toISOString().slice(0,10);
+document.getElementById("f-desde").value = hace7;
+document.getElementById("f-hasta").value = hoy;
+
+async function cargarLog() {
+  document.getElementById("log-container").innerHTML =
+    `<div class="text-center py-5 text-muted"><i class="fas fa-spinner fa-spin fa-2x"></i></div>`;
+  pagina = 0;
+  try {
+    const params = {
+      fecha_inicio: document.getElementById("f-desde").value,
+      fecha_fin:    document.getElementById("f-hasta").value,
+    };
+    const resultado_f = document.getElementById("f-resultado").value;
+    if (resultado_f) params.resultado = resultado_f;
+
+    const data = await API.reportes.accesos(params);
+    logsData = data.detalle || [];
+    renderTabla();
+  } catch (err) {
+    document.getElementById("log-container").innerHTML = `
+      <div class="text-center py-5">
+        <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2 d-block"></i>
+        <span class="text-danger">${err.message}</span><br>
+        <button class="btn btn-sm btn-outline-danger mt-2" onclick="cargarLog()">Reintentar</button>
+      </div>`;
+  }
+}
+
+function renderTabla() {
+  const total   = logsData.length;
+  const paginas = Math.ceil(total / PER_PAG);
+  const inicio  = pagina * PER_PAG;
+  const pagData = logsData.slice(inicio, inicio + PER_PAG);
+
+  document.getElementById("badge-total").textContent  = `${total} registros`;
+  document.getElementById("pag-info").textContent =
+    total ? `Mostrando ${inicio+1}–${Math.min(inicio+PER_PAG,total)} de ${total}` : "";
+
+  document.getElementById("log-container").innerHTML = pagData.length
+    ? `<div class="table-responsive"><table class="table table-sm table-striped table-hover mb-0">
+        <thead class="thead-light">
+          <tr><th>#</th><th>Fecha/Hora</th><th>Usuario</th><th>Terminal</th><th>Casillero</th><th>Confianza</th><th>Resultado</th></tr>
+        </thead>
+        <tbody>${pagData.map(l => `
+          <tr style="font-size:13px;">
+            <td class="mono text-muted" style="font-size:10px;">${l.id}</td>
+            <td class="mono" style="font-size:11px; white-space:nowrap;">${fmtFechaCorta(l.timestamp)} ${fmtHora(l.timestamp)}</td>
+            <td><strong>${l.usuario || "—"}</strong></td>
+            <td style="font-size:12px;color:#6c757d;">${l.terminal_id || "—"}</td>
+            <td class="mono" style="color:#007bff;">${l.casillero_numero || "—"}</td>
+            <td>${confianzaHtml(l.confianza_biometrica ?? l.confianza ?? 0)}</td>
+            <td>${resultadoBadge(l.resultado)}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table></div>`
+    : `<div class="text-center py-5 text-muted"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Sin registros en el período seleccionado</div>`;
+
+  // Paginación
+  if (paginas <= 1) { document.getElementById("paginacion").innerHTML=""; return; }
+  let html = `<li class="page-item ${pagina===0?"disabled":""}"><a class="page-link" href="#" onclick="irPag(${pagina-1});return false;">‹</a></li>`;
+  for (let i=0; i<paginas; i++) {
+    if (paginas>8 && Math.abs(i-pagina)>2 && i!==0 && i!==paginas-1) { if(i===1||i===paginas-2) html+=`<li class="page-item disabled"><a class="page-link">…</a></li>`; continue; }
+    html += `<li class="page-item ${i===pagina?"active":""}"><a class="page-link mono" href="#" onclick="irPag(${i});return false;">${i+1}</a></li>`;
+  }
+  html += `<li class="page-item ${pagina>=paginas-1?"disabled":""}"><a class="page-link" href="#" onclick="irPag(${pagina+1});return false;">›</a></li>`;
+  document.getElementById("paginacion").innerHTML = html;
+}
+
+function irPag(n) {
+  const max = Math.ceil(logsData.length/PER_PAG)-1;
+  if (n<0||n>max) return;
+  pagina=n; renderTabla();
+}
+
+function resetFiltros() {
+  document.getElementById("f-desde").value    = hace7;
+  document.getElementById("f-hasta").value    = hoy;
+  document.getElementById("f-resultado").value= "";
+  cargarLog();
+}
+
+function exportCSV() {
+  const cols = ["ID","Fecha","Hora","Usuario","Terminal","Casillero","Confianza","Resultado"];
+  const rows = logsData.map(l => [l.id, fmtFecha(l.timestamp), fmtHora(l.timestamp), l.usuario||"", l.terminal_id||"", l.casillero_numero||"", l.confianza_biometrica??l.confianza??0, l.resultado]);
+  const csv  = [cols,...rows].map(r=>r.join(",")).join("\n");
+  const a    = document.createElement("a");
+  a.href     = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download = `log_accesos_${hoy}.csv`;
+  a.click();
+}
+
+cargarLog();
+</script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Casilleros</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
+  <link rel="stylesheet" href="css/shared.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <ul class="navbar-nav"><li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a></li></ul>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item"><span class="nav-link"><span class="live-dot"></span><small id="reloj" class="mono"></small></span></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="API.auth.logout()" title="Salir"><i class="fas fa-sign-out-alt"></i></a></li>
+    </ul>
+  </nav>
+
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <a href="dashboard.html" class="brand-link">
+      <i class="fas fa-lock brand-image ml-1" style="color:#007bff;font-size:1.4rem;"></i>
+      <span class="brand-text font-weight-bold">CASILLEROS</span>
+    </a>
+    <div class="sidebar">
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image"><i class="fas fa-user-shield fa-lg text-secondary ml-2 mt-1"></i></div>
+        <div class="info"><a href="#" class="d-block" id="sidebar-nombre">Administrador</a><small id="sidebar-email" class="text-muted d-block"></small><small id="sidebar-rol" class="badge" style="font-size:9px;"></small></div>
+      </div>
+      <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" id="sidebar-nav"></ul></nav>
+    </div>
+  </aside>
+
+  <div class="content-wrapper">
+    <div class="content-header"><div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6"><h1 class="m-0"><i class="fas fa-tachometer-alt mr-2 text-primary"></i>Dashboard</h1></div>
+        <div class="col-sm-6"><ol class="breadcrumb float-sm-right"><li class="breadcrumb-item active">Dashboard</li></ol></div>
+      </div>
+    </div></div>
+
+    <div class="content"><div class="container-fluid">
+
+      <!-- Stats -->
+      <div class="row" id="stats-row">
+        <!-- Skeleton mientras carga -->
+        <div class="col-12"><div class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando datos…</div></div>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-8">
+          <div class="card card-primary card-outline elevation-2">
+            <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-line mr-2"></i>Accesos últimas 24 horas</h3>
+              <div class="card-tools"><button class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button></div>
+            </div>
+            <div class="card-body"><div class="chart-container"><canvas id="chart-accesos"></canvas></div></div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card card-info card-outline elevation-2">
+            <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Estado casilleros</h3></div>
+            <div class="card-body">
+              <div class="chart-container" style="height:200px;"><canvas id="chart-casilleros"></canvas></div>
+              <div id="leyenda-casilleros" class="mt-3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="card card-warning card-outline elevation-2">
+            <div class="card-header"><h3 class="card-title"><i class="fas fa-building mr-2"></i>Ocupación por piso</h3></div>
+            <div class="card-body" id="ocupacion-pisos"><div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin"></i></div></div>
+          </div>
+        </div>
+        <div class="col-lg-8">
+          <div class="card card-outline card-success elevation-2">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fas fa-history mr-2"></i>Últimos accesos</h3>
+              <div class="card-tools"><a href="log.html" class="btn btn-tool btn-sm">Ver todos <i class="fas fa-arrow-right"></i></a></div>
+            </div>
+            <div class="card-body p-0">
+              <table class="table table-sm table-striped mb-0">
+                <thead class="thead-light"><tr><th>Hora</th><th>Usuario</th><th>Terminal</th><th>Casillero</th><th>Resultado</th></tr></thead>
+                <tbody id="tbody-ultimos"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div></div>
+  </div>
+  <footer class="main-footer"><strong>Casilleros Automatizados</strong> &copy; 2026<div class="float-right"><b>v</b>1.0.0</div></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/js/adminlte.min.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/layout.js"></script>
+<script>
+if (!requireAuth()) throw new Error("no auth");
+renderLayout("dashboard");
+iniciarReloj();
+
+let chartAccesos   = null;
+let chartCasilleros= null;
+
+async function cargarDashboard() {
+  try {
+    // Llamadas en paralelo para máxima velocidad
+    const [reporteOcupacion, reporteAccesos] = await Promise.all([
+      API.reportes.ocupacion(),
+      API.reportes.accesos({ limite: 100 }),
+    ]);
+
+    renderStats(reporteOcupacion.resumen, reporteAccesos.resumen);
+    renderChartAccesos(reporteAccesos.detalle || []);
+    renderChartCasilleros(reporteOcupacion);
+    renderOcupacionPisos(reporteOcupacion.por_piso || []);
+    renderUltimosAccesos(reporteAccesos.detalle || []);
+  } catch (err) {
+    document.getElementById("stats-row").innerHTML = `
+      <div class="col-12">
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-triangle mr-2"></i>
+          Error al cargar datos: <strong>${err.message}</strong>
+          <button class="btn btn-sm btn-outline-danger ml-3" onclick="cargarDashboard()">
+            <i class="fas fa-redo mr-1"></i>Reintentar
+          </button>
+        </div>
+      </div>`;
+  }
+}
+
+function renderStats(ocupacion, accesos) {
+  const statsData = [
+    { label:"Casilleros Ocupados", val: ocupacion?.ocupados ?? "—",     sub:`de ${ocupacion?.total ?? "—"} totales`,    color:"primary",   icon:"fa-lock"         },
+    { label:"Casilleros Libres",   val: ocupacion?.libres   ?? "—",     sub:`${ocupacion?.porcentaje_ocupacion ?? 0}% ocupado`,color:"success",icon:"fa-lock-open"    },
+    { label:"Accesos Exitosos",    val: accesos?.exitosos   ?? "—",     sub:"en el período",                            color:"info",      icon:"fa-check-circle" },
+    { label:"Accesos Denegados",   val: accesos?.denegados  ?? "—",     sub:`${accesos?.tasa_exito ?? 0}% tasa de éxito`,color:"danger",  icon:"fa-times-circle" },
+  ];
+  document.getElementById("stats-row").innerHTML = statsData.map(s => `
+    <div class="col-lg-3 col-md-6 col-sm-6">
+      <div class="card stat-card elevation-2" style="border-color:var(--${s.color})">
+        <div class="card-body">
+          <div class="stat-label">${s.label}</div>
+          <div class="stat-value text-${s.color}">${s.val}</div>
+          <small class="text-muted">${s.sub}</small>
+          <i class="fas ${s.icon} stat-icon text-${s.color}"></i>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+function renderChartAccesos(detalle) {
+  const horas = Array.from({length:24}, (_,h) => ({
+    h,
+    ex: detalle.filter(l => l.resultado === "exitoso"  && new Date(l.timestamp).getHours() === h).length,
+    de: detalle.filter(l => l.resultado !== "exitoso"  && new Date(l.timestamp).getHours() === h).length,
+  }));
+  if (chartAccesos) chartAccesos.destroy();
+  chartAccesos = new Chart(document.getElementById("chart-accesos"), {
+    type: "bar",
+    data: {
+      labels: horas.map(h => `${String(h.h).padStart(2,"0")}:00`),
+      datasets: [
+        { label:"Exitosos",  data:horas.map(h=>h.ex), backgroundColor:"rgba(40,167,69,0.7)",  borderRadius:3 },
+        { label:"Denegados", data:horas.map(h=>h.de), backgroundColor:"rgba(220,53,69,0.7)",  borderRadius:3 },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:"top"}}, scales:{x:{grid:{display:false}},y:{beginAtZero:true}} }
+  });
+}
+
+function renderChartCasilleros(data) {
+  const estados  = ["libre","ocupado","bloqueado","mantenimiento"];
+  const colores  = ["#28a745","#007bff","#dc3545","#ffc107"];
+  const conteos  = estados.map(e => {
+    const piso = (data.por_piso || []).reduce((sum, p) => sum + (p[e] || 0), 0);
+    return piso;
+  });
+  if (chartCasilleros) chartCasilleros.destroy();
+  chartCasilleros = new Chart(document.getElementById("chart-casilleros"), {
+    type: "doughnut",
+    data: { labels:estados, datasets:[{data:conteos, backgroundColor:colores, borderWidth:2}] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, cutout:"65%" }
+  });
+  document.getElementById("leyenda-casilleros").innerHTML = estados.map((e,i) => `
+    <div class="d-flex justify-content-between mb-1" style="font-size:12px;">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${colores[i]};margin-right:6px;"></span>${e}</span>
+      <span class="mono font-weight-bold">${conteos[i]}</span>
+    </div>`).join("");
+}
+
+function renderOcupacionPisos(pisos) {
+  if (!pisos.length) { document.getElementById("ocupacion-pisos").innerHTML = `<p class="text-muted text-center">Sin datos</p>`; return; }
+  document.getElementById("ocupacion-pisos").innerHTML = pisos.map(p => {
+    const pct = p.porcentaje_ocupacion || 0;
+    const cls = pct > 80 ? "danger" : pct > 50 ? "warning" : "success";
+    return `<div class="mb-3">
+      <div class="d-flex justify-content-between mb-1">
+        <span style="font-size:13px;"><i class="fas fa-layer-group mr-1 text-muted"></i>Piso ${p.piso}</span>
+        <span class="mono" style="font-size:12px;color:#007bff;">${p.ocupados}/${p.total} (${pct}%)</span>
+      </div>
+      <div class="progress progress-sm"><div class="progress-bar bg-${cls}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("");
+}
+
+function renderUltimosAccesos(detalle) {
+  const ultimos = detalle.slice(0, 10);
+  document.getElementById("tbody-ultimos").innerHTML = ultimos.length
+    ? ultimos.map(l => `
+        <tr>
+          <td class="mono" style="font-size:11px;">${fmtHora(l.timestamp)}</td>
+          <td><strong>${l.usuario || "—"}</strong></td>
+          <td style="font-size:12px;color:#6c757d;">${l.terminal_id || "—"}</td>
+          <td class="mono" style="color:#007bff;">${l.casillero_numero || "—"}</td>
+          <td>${resultadoBadge(l.resultado)}</td>
+        </tr>`).join("")
+    : `<tr><td colspan="5" class="text-center text-muted py-3">Sin accesos registrados</td></tr>`;
+}
+
+cargarDashboard();
+</script>
+</body>
+</html>

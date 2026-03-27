@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Empleado | Casilleros</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/shared.css">
+  <style>
+    /* ── Variables ── */
+    :root {
+      --step-done:    #28a745;
+      --step-active:  #007bff;
+      --step-pending: #dee2e6;
+      --card-radius:  14px;
+      --transition:   0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* ── Wizard wrapper ── */
+    .wizard-card {
+      border-radius: var(--card-radius);
+      border: none;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+    }
+
+    /* ── Progress stepper ── */
+    .stepper {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 24px 20px;
+      background: #fff;
+      position: relative;
+      gap: 0;
+    }
+    .stepper::before {
+      content: '';
+      position: absolute;
+      top: 48px;
+      left: calc(50% - (var(--steps-width) / 2) + 20px);
+      width: var(--connector-width);
+      height: 2px;
+      background: var(--step-pending);
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      max-width: 120px;
+    }
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: var(--step-pending);
+      transition: background var(--transition);
+      z-index: 0;
+    }
+    .step-item.done:not(:last-child)::after  { background: var(--step-done);   }
+    .step-item.active:not(:last-child)::after{ background: var(--step-pending); }
+
+    .step-circle {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px; font-weight: 700;
+      border: 2px solid var(--step-pending);
+      background: #fff;
+      color: var(--step-pending);
+      transition: all var(--transition);
+      position: relative; z-index: 2;
+    }
+    .step-item.done   .step-circle { border-color: var(--step-done);   background: var(--step-done);   color: #fff; }
+    .step-item.active .step-circle { border-color: var(--step-active); background: var(--step-active); color: #fff; box-shadow: 0 0 0 5px rgba(0,123,255,0.15); }
+
+    .step-label {
+      font-size: 11px; font-weight: 500;
+      color: #adb5bd;
+      margin-top: 8px;
+      text-align: center;
+      transition: color var(--transition);
+      line-height: 1.3;
+    }
+    .step-item.done   .step-label { color: var(--step-done);   }
+    .step-item.active .step-label { color: var(--step-active); font-weight: 600; }
+
+    /* ── Panels ── */
+    .panel {
+      display: none;
+      animation: panelIn 0.35s ease;
+    }
+    .panel.active { display: block; }
+    @keyframes panelIn {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0);    }
+    }
+
+    /* ── Panel header ── */
+    .panel-header {
+      padding: 28px 32px 0;
+      border-bottom: 1px solid #f0f0f0;
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+    }
+    .panel-icon {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 14px;
+    }
+    .panel-title { font-size: 1.25rem; font-weight: 600; margin: 0 0 4px; }
+    .panel-subtitle { font-size: 13px; color: #6c757d; margin: 0; }
+
+    /* ── Form styles ── */
+    .form-label-custom {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #6c757d;
+      font-weight: 600;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .form-control-custom {
+      border: 1.5px solid #e9ecef;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    .form-control-custom:focus {
+      outline: none;
+      border-color: var(--step-active);
+      box-shadow: 0 0 0 3px rgba(0,123,255,0.12);
+    }
+    .form-control-custom.error { border-color: #dc3545; }
+    .field-error { font-size: 11px; color: #dc3545; margin-top: 4px; display: none; }
+
+    /* ── Paso 2: dispositivos ── */
+    .device-card {
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 10px;
+    }
+    .device-card:hover   { border-color: #007bff; background: #f8fbff; }
+    .device-card.selected{ border-color: #007bff; background: #f0f6ff; }
+    .device-card.offline { opacity: 0.5; cursor: not-allowed; }
+    .device-status-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .device-status-dot.online  { background: #28a745; animation: livePulse 1.5s infinite; }
+    .device-status-dot.offline { background: #dc3545; }
+    .device-info .name  { font-weight: 600; font-size: 14px; margin: 0; }
+    .device-info .meta  { font-size: 12px; color: #6c757d; font-family: 'Space Mono', monospace; }
+    .device-check { margin-left: auto; color: #007bff; display: none; font-size: 18px; }
+    .device-card.selected .device-check { display: block; }
+
+    /* ── Paso 3: instrucciones ZKTeco ── */
+    .instruccion-step {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 14px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .instruccion-step:last-child { border-bottom: none; }
+    .instruccion-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #007bff; color: #fff;
+      font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .instruccion-text strong { display: block; font-size: 14px; margin-bottom: 3px; }
+    .instruccion-text span   { font-size: 13px; color: #6c757d; }
+    .ruta-nav {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f8f9fa; border: 1px solid #dee2e6;
+      border-radius: 6px; padding: 5px 12px;
+      font-family: 'Space Mono', monospace; font-size: 12px;
+      margin-top: 6px; color: #495057;
+    }
+    .ruta-nav i { font-size: 10px; color: #adb5bd; }
+    .pin-badge {
+      display: inline-block;
+      background: #007bff; color: #fff;
+      font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700;
+      padding: 8px 22px; border-radius: 8px;
+      letter-spacing: 0.1em; margin-top: 8px;
+    }
+
+    /* ── Paso 4: simulación cámara ── */
+    .camera-frame {
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      border: 4px solid #dee2e6;
+      margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+      background: #f8f9fa;
+      position: relative; overflow: hidden;
+      transition: border-color 0.4s;
+    }
+    .camera-frame.scanning {
+      border-color: #007bff;
+      animation: cameraPulse 1.2s ease-in-out infinite;
+    }
+    .camera-frame.success { border-color: #28a745; }
+    @keyframes cameraPulse {
+      0%,100%{ box-shadow: 0 0 0 0   rgba(0,123,255,0.3); }
+      50%    { box-shadow: 0 0 0 16px rgba(0,123,255,0);   }
+    }
+    .scan-line {
+      position: absolute; left: 0; right: 0;
+      height: 2px; background: rgba(0,123,255,0.6);
+      animation: scanDown 1.8s linear infinite;
+      display: none;
+    }
+    .camera-frame.scanning .scan-line { display: block; }
+    @keyframes scanDown {
+      0%  { top: 0%;   opacity: 1; }
+      100%{ top: 100%; opacity: 0; }
+    }
+    .camera-icon { font-size: 60px; color: #ced4da; }
+    .camera-icon.scanning { color: #007bff; }
+    .camera-icon.success  { color: #28a745; }
+
+    .enroll-progress {
+      height: 6px; border-radius: 3px; background: #e9ecef;
+      overflow: hidden; margin: 12px 0;
+    }
+    .enroll-progress-bar {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, #007bff, #00c6ff);
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* ── Paso 5: resumen final ── */
+    .resumen-card {
+      background: linear-gradient(135deg, #f0f6ff 0%, #f8fff0 100%);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      border: 1px solid #e3f0ff;
+    }
+    .resumen-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg, #007bff, #28a745);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: #fff;
+      margin: 0 auto 14px;
+    }
+    .resumen-nombre { font-size: 1.2rem; font-weight: 700; margin: 0 0 4px; }
+    .resumen-email  { font-size: 13px; color: #6c757d; margin: 0 0 16px; }
+    .resumen-chips  { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 500;
+      background: #fff; border: 1px solid #dee2e6;
+    }
+    .chip i { font-size: 11px; }
+
+    .success-banner {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: #fff; border-radius: 10px;
+      padding: 18px 24px;
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 20px;
+    }
+    .success-banner i { font-size: 32px; opacity: 0.9; }
+    .success-banner .title { font-size: 16px; font-weight: 600; margin: 0 0 3px; }
+    .success-banner .sub   { font-size: 13px; opacity: 0.85; margin: 0; }
+
+    /* ── Nav botones ── */
+    .wizard-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 32px;
+      border-top: 1px solid #f0f0f0;
+      background: #fafafa;
+    }
+    .btn-wizard {
+      padding: 10px 24px; border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 8px;
+      cursor: pointer; transition: all 0.2s;
+      border: none;
+    }
+    .btn-wizard-primary {
+      background: #007bff; color: #fff;
+    }
+    .btn-wizard-primary:hover { background: #0056b3; transform: translateY(-1px); }
+    .btn-wizard-secondary {
+      background: transparent; color: #6c757d;
+      border: 1.5px solid #dee2e6;
+    }
+    .btn-wizard-secondary:hover { background: #f8f9fa; }
+    .btn-wizard-success {
+      background: #28a745; color: #fff;
+    }
+    .btn-wizard-success:hover { background: #1e7e34; }
+
+    /* ── Alerta info ── */
+    .info-box-custom {
+      background: #e8f4fd; border-left: 4px solid #007bff;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px; font-size: 13px; color: #0c5460;
+      margin-bottom: 16px;
+    }
+    .info-box-custom i { color: #007bff; margin-right: 6px; }
+  </style>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <ul class="navbar-nav">
+      <li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a></li>
+    </ul>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item"><span class="nav-link"><span class="live-dot"></span><small id="reloj" class="mono"></small></span></li>
+      <li class="nav-item"><a class="nav-link btn-logout" href="#"><i class="fas fa-sign-out-alt"></i></a></li>
+    </ul>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <a href="dashboard.html" class="brand-link">
+      <i class="fas fa-lock brand-image ml-1" style="color:#007bff;font-size:1.4rem;"></i>
+      <span class="brand-text font-weight-bold">CASILLEROS</span>
+    </a>
+    <div class="sidebar">
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image"><i class="fas fa-user-shield fa-lg text-secondary ml-2 mt-1"></i></div>
+        <div class="info"><a href="#" class="d-block">Administrador</a><small id="sidebar-email" class="text-muted"></small></div>
+      </div>
+      <nav class="mt-2"><ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" id="sidebar-nav"></ul></nav>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <div class="content-wrapper">
+    <div class="content-header"><div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1 class="m-0"><i class="fas fa-user-plus mr-2 text-primary"></i>Registrar Nuevo Empleado</h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="dashboard.html">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="usuarios.html">Usuarios</a></li>
+            <li class="breadcrumb-item active">Registro</li>
+          </ol>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="content"><div class="container-fluid">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+
+          <div class="card wizard-card elevation-3">
+
+            <!-- ── STEPPER ── -->
+            <div class="stepper">
+              <div class="step-item active" id="si-1">
+                <div class="step-circle"><i class="fas fa-user" id="sc-1"></i></div>
+                <div class="step-label">Datos del empleado</div>
+              </div>
+              <div class="step-item" id="si-2">
+                <div class="step-circle" id="sc-2">2</div>
+                <div class="step-label">Seleccionar dispositivo</div>
+              </div>
+              <div class="step-item" id="si-3">
+                <div class="step-circle" id="sc-3">3</div>
+                <div class="step-label">Instrucciones ZKTeco</div>
+              </div>
+              <div class="step-item" id="si-4">
+                <div class="step-circle" id="sc-4">4</div>
+                <div class="step-label">Verificar registro</div>
+              </div>
+              <div class="step-item" id="si-5">
+                <div class="step-circle" id="sc-5">5</div>
+                <div class="step-label">Asignar casillero</div>
+              </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════
+                 PANEL 1 — Datos del empleado
+            ════════════════════════════════════════════════ -->
+            <div class="panel active" id="panel-1">
+              <div class="panel-header">
+                <div class="panel-icon" style="background:#e8f0fe;">
+                  <i class="fas fa-id-card" style="color:#007bff;"></i>
+                </div>
+                <h4 class="panel-title">Datos del empleado</h4>
+                <p class="panel-subtitle">Completa la información del nuevo empleado. El ID generado será el que se use en el dispositivo ZKTeco.</p>
+              </div>
+              <div class="px-4 pb-2">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label-custom">Nombre *</label>
+                    <input id="f-nombre" class="form-control-custom" type="text" placeholder="Ana">
+                    <div class="field-error" id="e-nombre">Campo requerido</div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label-custom">Apellido *</label>
+                    <input id="f-apellido" class="form-control-custom" type="text" placeholder="García">
+                    <div class="field-error" id="e-apellido">Campo requerido</div>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label-custom">Email corporativo *</label>
+                  <input id="f-email" class="form-control-custom" type="email" placeholder="ana.garcia@empresa.com">
+                  <div class="field-error" id="e-email">Email inválido</div>
+                </div>
+                <div class="row">
+                  <div class="col-md-8 mb-3">
+                    <label class="form-label-custom">Departamento *</label>
+                    <select id="f-depto" class="form-control-custom">
+                      <option value="">Seleccionar…</option>
+                      <option>Tecnología</option>
+                      <option>Finanzas</option>
+                      <option>RRHH</option>
+                      <option>Marketing</option>
+                      <option>Operaciones</option>
+                    </select>
+                    <div class="field-error" id="e-depto">Campo requerido</div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label-custom">Piso preferido</label>
+                    <select id="f-piso" class="form-control-custom">
+                      <option value="">Cualquiera</option>
+                      <option value="1">Piso 1</option>
+                      <option value="2">Piso 2</option>
+                      <option value="3">Piso 3</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="info-box-custom">
+                  <i class="fas fa-info-circle"></i>
+                  Al guardar se generará automáticamente un <strong>ID de empleado</strong> que deberá usarse en el dispositivo ZKTeco en el siguiente paso.
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════
+                 PANEL 2 — Seleccionar dispositivo
+            ════════════════════════════════════════════════ -->
+            <div class="panel" id="panel-2">
+              <div class="panel-header">
+                <div class="panel-icon" style="background:#e8f9ef;">
+                  <i class="fas fa-camera" style="color:#28a745;"></i>
+                </div>
+                <h4 class="panel-title">Seleccionar dispositivo ZKTeco</h4>
+                <p class="panel-subtitle">¿En qué terminal va a registrar su rostro el empleado?</p>
+              </div>
+              <div class="px-4 pb-2">
+                <div id="lista-dispositivos"></div>
+                <div class="field-error" id="e-dispositivo" style="display:none; font-size:13px; margin-top:8px;">
+                  Debes seleccionar un dispositivo para continuar.
+                </div>
+                <div class="info-box-custom mt-3">
+                  <i class="fas fa-map-marker-alt"></i>
+                  Selecciona el dispositivo más cercano al lugar de trabajo del empleado para que el registro sea más cómodo.
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════
+                 PANEL 3 — Instrucciones en el dispositivo
+            ════════════════════════════════════════════════ -->
+            <div class="panel" id="panel-3">
+              <div class="panel-header">
+                <div class="panel-icon" style="background:#fff3e0;">
+                  <i class="fas fa-list-ol" style="color:#fd7e14;"></i>
+                </div>
+                <h4 class="panel-title">Instrucciones para el empleado</h4>
+                <p class="panel-subtitle">El empleado debe realizar estos pasos en el dispositivo ZKTeco ahora.</p>
+              </div>
+              <div class="px-4 pb-2">
+                <!-- PIN destacado -->
+                <div class="text-center mb-4 py-3" style="background:#f8f9fa; border-radius:10px; border:1px solid #e9ecef;">
+                  <div style="font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#6c757d; margin-bottom:6px;">
+                    <i class="fas fa-key mr-1"></i>ID del empleado en el dispositivo
+                  </div>
+                  <div class="pin-badge" id="pin-display">—</div>
+                  <div style="font-size:12px; color:#6c757d; margin-top:8px;">
+                    El empleado debe ingresar exactamente este número
+                  </div>
+                </div>
+
+                <!-- Pasos -->
+                <div class="instruccion-step">
+                  <div class="instruccion-num">1</div>
+                  <div class="instruccion-text">
+                    <strong>Ir al dispositivo <span id="inst-dispositivo" class="text-primary"></span></strong>
+                    <span>El empleado debe acercarse físicamente al terminal ZKTeco SenseFace 2A.</span>
+                  </div>
+                </div>
+                <div class="instruccion-step">
+                  <div class="instruccion-num">2</div>
+                  <div class="instruccion-text">
+                    <strong>Navegar al menú de usuarios</strong>
+                    <span>En la pantalla táctil del dispositivo:</span>
+                    <div class="ruta-nav mt-1">
+                      Menú <i class="fas fa-chevron-right"></i> User Mgt <i class="fas fa-chevron-right"></i> New User
+                    </div>
+                  </div>
+                </div>
+                <div class="instruccion-step">
+                  <div class="instruccion-num">3</div>
+                  <div class="instruccion-text">
+                    <strong>Ingresar el ID del empleado</strong>
+                    <span>En el campo <em>User ID</em> escribir exactamente:</span>
+                    <div class="pin-badge mt-1" id="pin-display-2" style="font-size:15px; padding:6px 16px;">—</div>
+                  </div>
+                </div>
+                <div class="instruccion-step">
+                  <div class="instruccion-num">4</div>
+                  <div class="instruccion-text">
+                    <strong>Registrar el rostro</strong>
+                    <span>Presionar <strong>Face</strong> → el empleado mira directo a la cámara → el dispositivo captura automáticamente (±5 segundos).</span>
+                  </div>
+                </div>
+                <div class="instruccion-step">
+                  <div class="instruccion-num">5</div>
+                  <div class="instruccion-text">
+                    <strong>Guardar</strong>
+                    <span>Presionar <strong>Save</strong> en el dispositivo. Listo — el rostro queda guardado internamente.</span>
+                  </div>
+                </div>
+
+                <div class="info-box-custom mt-3" style="background:#fff3cd; border-color:#ffc107;">
+                  <i class="fas fa-exclamation-triangle" style="color:#856404;"></i>
+                  <span style="color:#856404;">Cuando el empleado haya terminado en el dispositivo, regresa aquí y presiona <strong>Continuar</strong>.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════
+                 PANEL 4 — Verificar registro biométrico
+            ════════════════════════════════════════════════ -->
+            <div class="panel" id="panel-4">
+              <div class="panel-header">
+                <div class="panel-icon" style="background:#f3e8ff;">
+                  <i class="fas fa-fingerprint" style="color:#6f42c1;"></i>
+                </div>
+                <h4 class="panel-title">Verificar registro</h4>
+                <p class="panel-subtitle">Vamos a confirmar que el rostro quedó correctamente registrado en el dispositivo.</p>
+              </div>
+              <div class="px-4 pb-2 text-center">
+                <!-- Cámara animada -->
+                <div class="camera-frame" id="camera-frame">
+                  <div class="scan-line"></div>
+                  <i class="fas fa-user camera-icon" id="camera-icon"></i>
+                </div>
+                <div id="verify-status" style="font-size:14px; color:#6c757d; margin-bottom:16px;">
+                  Presiona <strong>Iniciar verificación</strong> para simular que el empleado pasa frente al lector.
+                </div>
+                <div class="enroll-progress" id="progress-bar" style="display:none;">
+                  <div class="enroll-progress-bar" id="progress-bar-fill"></div>
+                </div>
+                <div id="verify-result" style="display:none;"></div>
+                <button class="btn-wizard btn-wizard-primary" id="btn-verificar" onclick="iniciarVerificacion()" style="margin-bottom:8px;">
+                  <i class="fas fa-play mr-1"></i> Iniciar verificación
+                </button>
+                <div class="info-box-custom text-left mt-3">
+                  <i class="fas fa-info-circle"></i>
+                  En producción, el empleado pasa frente al SenseFace 2A y el backend recibe el evento automáticamente por PUSH. Esta pantalla confirma que el sistema recibió el evento correctamente.
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════
+                 PANEL 5 — Asignar casillero
+            ════════════════════════════════════════════════ -->
+            <div class="panel" id="panel-5">
+              <div class="panel-header">
+                <div class="panel-icon" style="background:#e8f9ef;">
+                  <i class="fas fa-box-open" style="color:#28a745;"></i>
+                </div>
+                <h4 class="panel-title">Asignar casillero</h4>
+                <p class="panel-subtitle">Último paso: asignar un casillero al empleado.</p>
+              </div>
+              <div class="px-4 pb-2">
+                <!-- Resumen del empleado -->
+                <div class="resumen-card mb-4">
+                  <div class="resumen-avatar"><i class="fas fa-user"></i></div>
+                  <div class="resumen-nombre" id="r-nombre">—</div>
+                  <div class="resumen-email"  id="r-email">—</div>
+                  <div class="resumen-chips">
+                    <span class="chip"><i class="fas fa-building text-muted"></i><span id="r-depto">—</span></span>
+                    <span class="chip"><i class="fas fa-fingerprint text-success"></i> Biometría registrada</span>
+                    <span class="chip mono" style="color:#007bff;"><i class="fas fa-id-badge"></i>ID: <span id="r-id">—</span></span>
+                  </div>
+                </div>
+
+                <!-- Opciones de asignación -->
+                <div class="mb-3">
+                  <label class="form-label-custom">Método de asignación</label>
+                  <div class="d-flex gap-2" style="gap:10px;">
+                    <label class="device-card flex-fill" style="cursor:pointer; margin:0;" id="opt-auto">
+                      <input type="radio" name="asignacion" value="auto" checked style="display:none;">
+                      <div>
+                        <div style="font-weight:600; font-size:14px; margin-bottom:3px;"><i class="fas fa-magic mr-2 text-primary"></i>Automático</div>
+                        <div style="font-size:12px; color:#6c757d;">El sistema elige el mejor casillero disponible en el piso preferido</div>
+                      </div>
+                    </label>
+                    <label class="device-card flex-fill" style="cursor:pointer; margin:0;" id="opt-manual">
+                      <input type="radio" name="asignacion" value="manual" style="display:none;">
+                      <div>
+                        <div style="font-weight:600; font-size:14px; margin-bottom:3px;"><i class="fas fa-hand-pointer mr-2 text-warning"></i>Manual</div>
+                        <div style="font-size:12px; color:#6c757d;">Elegir un casillero específico de los disponibles</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div id="asignacion-resultado" style="display:none;">
+                  <div class="success-banner">
+                    <i class="fas fa-box"></i>
+                    <div>
+                      <div class="title">Casillero asignado: <span class="mono" id="r-casillero">—</span></div>
+                      <div class="sub">Piso <span id="r-piso">—</span> · Zona <span id="r-zona">—</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════
+                 PANEL FINAL — Éxito
+            ════════════════════════════════════════════════ -->
+            <div class="panel" id="panel-final">
+              <div class="px-4 pb-2 pt-4 text-center">
+                <div style="font-size:72px; margin-bottom:12px;">✅</div>
+                <h3 style="font-weight:700; margin-bottom:6px;">¡Registro completado!</h3>
+                <p style="color:#6c757d; margin-bottom:24px;">El empleado ya puede usar el sistema.</p>
+
+                <div class="resumen-card mb-4 text-left">
+                  <div class="row">
+                    <div class="col-6">
+                      <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:#6c757d; margin-bottom:4px;">Empleado</div>
+                      <div style="font-weight:600;" id="fin-nombre">—</div>
+                    </div>
+                    <div class="col-6">
+                      <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:#6c757d; margin-bottom:4px;">ID</div>
+                      <div class="mono" style="color:#007bff; font-weight:700;" id="fin-id">—</div>
+                    </div>
+                    <div class="col-6 mt-3">
+                      <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:#6c757d; margin-bottom:4px;">Casillero</div>
+                      <div class="mono" style="font-weight:600;" id="fin-casillero">—</div>
+                    </div>
+                    <div class="col-6 mt-3">
+                      <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:#6c757d; margin-bottom:4px;">Dispositivo</div>
+                      <div style="font-size:13px;" id="fin-dispositivo">—</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-center gap-3" style="gap:12px;">
+                  <a href="onboarding.html" class="btn-wizard btn-wizard-secondary">
+                    <i class="fas fa-user-plus"></i> Registrar otro
+                  </a>
+                  <a href="usuarios.html" class="btn-wizard btn-wizard-primary">
+                    <i class="fas fa-users"></i> Ver todos los usuarios
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── NAVEGACIÓN ── -->
+            <div class="wizard-nav" id="wizard-nav">
+              <button class="btn-wizard btn-wizard-secondary" id="btn-prev" onclick="irPaso(-1)" style="visibility:hidden;">
+                <i class="fas fa-arrow-left"></i> Atrás
+              </button>
+              <div style="font-size:12px; color:#adb5bd;" id="paso-contador">Paso 1 de 5</div>
+              <button class="btn-wizard btn-wizard-primary" id="btn-next" onclick="irPaso(1)">
+                Guardar y continuar <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
+
+          </div><!-- /card -->
+        </div>
+      </div>
+    </div></div>
+  </div>
+  <footer class="main-footer"><strong>Casilleros Automatizados</strong> &copy; 2026</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/js/adminlte.min.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/layout.js"></script>
+<script>
+if (!requireAuth()) throw new Error("no auth");
+renderLayout("usuarios");
+iniciarReloj();
+
+// ── Estado del wizard ──────────────────────────────────────────────────────
+let pasoActual = 1;
+const PASOS_TOTAL = 5;
+let nuevoUsuario = {
+  id: null,
+  nombre: "", apellido: "", email: "", departamento: "", piso: null,
+  dispositivo: null, casillero: null,
+};
+let terminalesCache = [];
+
+// ── Cargar y renderizar lista de terminales desde la API ──────────────────
+async function renderDispositivos() {
+  const contenedor = document.getElementById("lista-dispositivos");
+  contenedor.innerHTML = `<div class="text-center py-3 text-muted"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando terminales…</div>`;
+  try {
+    terminalesCache = await API.hardware.terminales();
+    if (!terminalesCache.length) {
+      contenedor.innerHTML = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle mr-2"></i>No hay terminales ZKTeco registradas.</div>`;
+      return;
+    }
+    contenedor.innerHTML = terminalesCache.map(t => `
+      <div class="device-card ${!t.activo ? "offline" : ""}" id="dc-${t.id}"
+           onclick="${t.activo ? `seleccionarDispositivo(${t.id})` : ""}">
+        <div class="device-status-dot ${t.activo ? "online" : "offline"}"></div>
+        <div class="device-info">
+          <p class="name">${t.descripcion}</p>
+          <p class="meta">${t.ip_local} · Piso ${t.piso} · ${t.activo ? "En línea" : "Sin conexión"}</p>
+        </div>
+        <i class="fas fa-check-circle device-check"></i>
+        ${!t.activo ? `<span class="badge badge-secondary ml-auto">Offline</span>` : ""}
+      </div>`).join("");
+  } catch (err) {
+    contenedor.innerHTML = `<div class="alert alert-danger">Error al cargar terminales: ${err.message}</div>`;
+  }
+}
+
+function seleccionarDispositivo(id) {
+  document.querySelectorAll(".device-card").forEach(c => c.classList.remove("selected"));
+  document.getElementById("dc-" + id).classList.add("selected");
+  nuevoUsuario.dispositivo = terminalesCache.find(t => t.id === id);
+  document.getElementById("e-dispositivo").style.display = "none";
+}
+
+// ── Validaciones por paso ──────────────────────────────────────────────────
+function validarPaso(paso) {
+  if (paso === 1) {
+    const nombre   = document.getElementById("f-nombre").value.trim();
+    const apellido = document.getElementById("f-apellido").value.trim();
+    const email    = document.getElementById("f-email").value.trim();
+    const depto    = document.getElementById("f-depto").value;
+    let ok = true;
+    const mostrar = (id, campo) => {
+      const err = document.getElementById(id);
+      const inp = document.getElementById(campo);
+      if (!document.getElementById(campo).value.trim()) {
+        err.style.display = "block"; inp.classList.add("error"); ok = false;
+      } else { err.style.display = "none"; inp.classList.remove("error"); }
+    };
+    mostrar("e-nombre",   "f-nombre");
+    mostrar("e-apellido", "f-apellido");
+    mostrar("e-depto",    "f-depto");
+    // Email
+    const emailErr = document.getElementById("e-email");
+    const emailInp = document.getElementById("f-email");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      emailErr.style.display = "block"; emailInp.classList.add("error"); ok = false;
+    } else { emailErr.style.display = "none"; emailInp.classList.remove("error"); }
+
+    if (ok) {
+      nuevoUsuario.nombre      = nombre;
+      nuevoUsuario.apellido    = apellido;
+      nuevoUsuario.email       = email;
+      nuevoUsuario.departamento= depto;
+      nuevoUsuario.piso        = document.getElementById("f-piso").value || null;
+    }
+    return ok;
+  }
+
+  if (paso === 2) {
+    if (!nuevoUsuario.dispositivo) {
+      document.getElementById("e-dispositivo").style.display = "block";
+      return false;
+    }
+    return true;
+  }
+
+  return true;
+}
+
+// ── Actualizar stepper visual ──────────────────────────────────────────────
+function actualizarStepper(paso) {
+  for (let i = 1; i <= PASOS_TOTAL; i++) {
+    const item = document.getElementById(`si-${i}`);
+    const circle = document.getElementById(`sc-${i}`);
+    item.className = "step-item" + (i < paso ? " done" : i === paso ? " active" : "");
+    if (i < paso) circle.innerHTML = '<i class="fas fa-check"></i>';
+    else if (i === paso) circle.innerHTML = i === 1 ? '<i class="fas fa-user"></i>' : String(i);
+    else circle.textContent = i;
+  }
+}
+
+// ── Acciones especiales al entrar a cada paso ──────────────────────────────
+function onEntrarPaso(paso) {
+  if (paso === 2) renderDispositivos();
+
+  if (paso === 3) {
+    document.getElementById("pin-display").textContent  = nuevoUsuario.id;
+    document.getElementById("pin-display-2").textContent = nuevoUsuario.id;
+    document.getElementById("inst-dispositivo").textContent = nuevoUsuario.dispositivo?.descripcion || nuevoUsuario.dispositivo?.nombre || "";
+  }
+
+  if (paso === 5) {
+    document.getElementById("r-nombre").textContent = `${nuevoUsuario.nombre} ${nuevoUsuario.apellido}`;
+    document.getElementById("r-email").textContent  = nuevoUsuario.email;
+    document.getElementById("r-depto").textContent  = nuevoUsuario.departamento;
+    document.getElementById("r-id").textContent     = nuevoUsuario.id;
+
+    // Selección de método
+    document.querySelectorAll("input[name='asignacion']").forEach(r => {
+      r.addEventListener("change", function() {
+        document.getElementById("opt-auto").classList.toggle("selected",   this.value==="auto");
+        document.getElementById("opt-manual").classList.toggle("selected", this.value==="manual");
+      });
+    });
+    document.getElementById("opt-auto").classList.add("selected");
+  }
+}
+
+// ── Navegación ─────────────────────────────────────────────────────────────
+async function irPaso(dir) {
+  if (dir === 1 && !validarPaso(pasoActual)) return;
+
+  // Acción especial: crear usuario en la API al salir del paso 1
+  if (dir === 1 && pasoActual === 1) {
+    const btnNext = document.getElementById("btn-next");
+    btnNext.disabled = true;
+    btnNext.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> Guardando…`;
+    try {
+      const resp = await API.usuarios.crear({
+        nombre:       nuevoUsuario.nombre,
+        apellido:     nuevoUsuario.apellido,
+        email:        nuevoUsuario.email,
+        departamento: nuevoUsuario.departamento,
+        piso_preferido: nuevoUsuario.piso ? Number(nuevoUsuario.piso) : null,
+      });
+      nuevoUsuario.id = resp.id;
+    } catch (err) {
+      toast(`Error al crear usuario: ${err.message}`, "danger");
+      btnNext.disabled = false;
+      btnNext.innerHTML = `Guardar y continuar <i class="fas fa-arrow-right"></i>`;
+      return;
+    }
+    btnNext.disabled = false;
+    btnNext.innerHTML = `Guardar y continuar <i class="fas fa-arrow-right"></i>`;
+  }
+
+  // Acción especial: asignar casillero en paso 5
+  if (dir === 1 && pasoActual === 5) {
+    await asignarCasillero();
+    return;
+  }
+
+  const siguiente = pasoActual + dir;
+  if (siguiente < 1 || siguiente > PASOS_TOTAL) return;
+
+  document.getElementById(`panel-${pasoActual}`).classList.remove("active");
+  pasoActual = siguiente;
+  document.getElementById(`panel-${pasoActual}`).classList.add("active");
+
+  actualizarStepper(pasoActual);
+  onEntrarPaso(pasoActual);
+
+  // Botones nav
+  document.getElementById("btn-prev").style.visibility = pasoActual === 1 ? "hidden" : "visible";
+  document.getElementById("paso-contador").textContent = `Paso ${pasoActual} de ${PASOS_TOTAL}`;
+
+  const btnNext = document.getElementById("btn-next");
+  if (pasoActual === 4) {
+    btnNext.innerHTML = `Verificación completa <i class="fas fa-arrow-right"></i>`;
+  } else if (pasoActual === 5) {
+    btnNext.innerHTML = `<i class="fas fa-box"></i> Asignar casillero`;
+    btnNext.className = "btn-wizard btn-wizard-success";
+  } else {
+    btnNext.innerHTML = `Guardar y continuar <i class="fas fa-arrow-right"></i>`;
+    btnNext.className = "btn-wizard btn-wizard-primary";
+  }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ── Verificación biométrica (polling real al ZKTeco) ─────────────────────
+let verificado = false;
+let _verifyPollTimer = null;
+
+function iniciarVerificacion() {
+  const frame  = document.getElementById("camera-frame");
+  const icon   = document.getElementById("camera-icon");
+  const status = document.getElementById("verify-status");
+  const btn    = document.getElementById("btn-verificar");
+  const bar    = document.getElementById("progress-bar");
+  const fill   = document.getElementById("progress-bar-fill");
+  const result = document.getElementById("verify-result");
+
+  btn.disabled = true;
+  bar.style.display = "block";
+  frame.classList.add("scanning");
+  icon.classList.add("scanning");
+  status.innerHTML = `<span style="color:#007bff;"><i class="fas fa-spinner fa-spin mr-1"></i>Esperando evento del dispositivo <strong>${nuevoUsuario.dispositivo?.descripcion || nuevoUsuario.dispositivo?.nombre || ""}</strong>…</span>`;
+
+  // Pulsar barra de espera suavemente mientras se hace polling
+  let pct = 0;
+  const barInterval = setInterval(() => {
+    pct = Math.min(pct + 0.5, 85);
+    fill.style.width = pct + "%";
+  }, 200);
+
+  const TIMEOUT_MS   = 90000;   // 90 s máximo esperando
+  const POLL_MS      = 3000;    // consultar cada 3 s
+  const iniciado     = Date.now();
+  let ultimoEventoId = null;    // detectar evento NUEVO
+
+  // Obtener la última entrada conocida para ignorar eventos anteriores
+  API.accesos.historial(nuevoUsuario.id).then(h => {
+    ultimoEventoId = h.length ? h[0].id : -1;
+  }).catch(() => { ultimoEventoId = -1; });
+
+  function detener(exito, confianza) {
+    clearInterval(barInterval);
+    clearInterval(_verifyPollTimer);
+    fill.style.width = "100%";
+    frame.classList.remove("scanning");
+    if (exito) {
+      frame.classList.add("success");
+      icon.className = "fas fa-check camera-icon success";
+      status.innerHTML = "";
+      result.style.display = "block";
+      result.innerHTML = `
+        <div class="success-banner" style="text-align:left;">
+          <i class="fas fa-check-circle"></i>
+          <div>
+            <div class="title">¡Rostro verificado correctamente!</div>
+            <div class="sub">Evento recibido del SenseFace 2A · PIN=${nuevoUsuario.id} · Confianza: ${(confianza * 100).toFixed(1)}%</div>
+          </div>
+        </div>`;
+      verificado = true;
+      document.getElementById("btn-next").disabled = false;
+    } else {
+      frame.classList.add("error");
+      icon.className = "fas fa-times camera-icon";
+      status.innerHTML = `<span style="color:#dc3545;"><i class="fas fa-times-circle mr-1"></i>Tiempo agotado. Intente de nuevo.</span>`;
+      btn.disabled = false;
+    }
+  }
+
+  _verifyPollTimer = setInterval(async () => {
+    if (Date.now() - iniciado > TIMEOUT_MS) { detener(false); return; }
+    try {
+      const historial = await API.accesos.historial(nuevoUsuario.id);
+      if (!historial.length) return;
+      const ultimo = historial[0];
+      if (ultimo.id !== ultimoEventoId && ultimo.resultado === "exitoso") {
+        detener(true, ultimo.confianza ?? 1.0);
+      }
+    } catch (_) { /* silencio */ }
+  }, POLL_MS);
+}
+
+// ── Asignar casillero ─────────────────────────────────────────────────────
+async function asignarCasillero() {
+  const btnNext = document.getElementById("btn-next");
+  btnNext.disabled = true;
+  btnNext.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> Asignando…`;
+
+  try {
+    const resp = await API.casilleros.asignar(nuevoUsuario.id);
+    // API devuelve { casillero_numero, piso, zona }
+    nuevoUsuario.casillero = { numero: resp.casillero_numero, piso: resp.piso, zona: resp.zona };
+
+    document.getElementById("asignacion-resultado").style.display = "block";
+    document.getElementById("r-casillero").textContent = resp.casillero_numero || "—";
+    document.getElementById("r-piso").textContent      = resp.piso             || "—";
+    document.getElementById("r-zona").textContent      = resp.zona             || "—";
+
+    setTimeout(() => mostrarPanelFinal(), 1200);
+  } catch (err) {
+    toast(`Error al asignar casillero: ${err.message}`, "danger");
+    btnNext.disabled = false;
+    btnNext.innerHTML = `<i class="fas fa-box"></i> Asignar casillero`;
+  }
+}
+
+// ── Panel final ────────────────────────────────────────────────────────────
+function mostrarPanelFinal() {
+  document.getElementById(`panel-${pasoActual}`).classList.remove("active");
+  document.getElementById("panel-final").classList.add("active");
+  document.getElementById("wizard-nav").style.display = "none";
+  actualizarStepper(PASOS_TOTAL + 1);
+
+  document.getElementById("fin-nombre").textContent     = `${nuevoUsuario.nombre} ${nuevoUsuario.apellido}`;
+  document.getElementById("fin-id").textContent         = nuevoUsuario.id;
+  document.getElementById("fin-casillero").textContent  = nuevoUsuario.casillero?.numero || "—";
+  document.getElementById("fin-dispositivo").textContent= nuevoUsuario.dispositivo?.descripcion || nuevoUsuario.dispositivo?.nombre || "—";
+
+  // Marcar todos los steps como done
+  for (let i = 1; i <= PASOS_TOTAL; i++) {
+    const item = document.getElementById(`si-${i}`);
+    const circle = document.getElementById(`sc-${i}`);
+    item.className = "step-item done";
+    circle.innerHTML = '<i class="fas fa-check"></i>';
+  }
+
+  toast(`✅ <strong>${nuevoUsuario.nombre} ${nuevoUsuario.apellido}</strong> registrado correctamente.`, "success");
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+actualizarStepper(1);
+</script>
+</body>
+</html>

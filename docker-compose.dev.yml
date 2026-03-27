@@ -1,0 +1,36 @@
+version: "3.9"
+
+# ══════════════════════════════════════════════════════════════
+#  Override para desarrollo local
+#  Uso: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#  Alias: ./scripts/dev.sh up
+# ══════════════════════════════════════════════════════════════
+
+services:
+
+  postgres:
+    ports:
+      - "5432:5432"    # Permite conectar con DBeaver/pgAdmin localmente
+
+  backend:
+    build:
+      context: ./backend
+      target: development    # Etapa con hot-reload
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./backend:/app      # Monta el código fuente (lectura/escritura para hot-reload)
+    ports:
+      - "8000:8000"         # Acceso directo para probar endpoints con Postman/curl
+    environment:
+      DEBUG: "true"
+      LOG_LEVEL: "debug"
+
+  nginx:
+    volumes:
+      - ./nginx/conf.d/dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend:/usr/share/nginx/html    # Sin :ro para ver cambios al instante
+
+  mosquitto:
+    ports:
+      - "1883:1883"
+      - "9001:9001"    # WebSocket MQTT para debug desde browser

@@ -1,0 +1,7 @@
+# requirements-test.txt
+# Instalar con: pip install -r requirements-test.txt --break-system-packages
+
+pytest==7.4.3
+pytest-asyncio==0.23.2
+httpx==0.25.2        # TestClient de FastAPI lo necesita
+anyio==4.1.0
