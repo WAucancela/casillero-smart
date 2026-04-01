@@ -10,7 +10,7 @@ services:
 
   postgres:
     ports:
-      - "5432:5432"    # Permite conectar con DBeaver/pgAdmin localmente
+      - "5433:5432"    # Permite conectar con DBeaver/pgAdmin localmente
 
   backend:
     build:
@@ -20,7 +20,7 @@ services:
     volumes:
       - ./backend:/app      # Monta el código fuente (lectura/escritura para hot-reload)
     ports:
-      - "8000:8000"         # Acceso directo para probar endpoints con Postman/curl
+      - "8001:8000"         # Acceso directo para probar endpoints con Postman/curl
     environment:
       DEBUG: "true"
       LOG_LEVEL: "debug"
