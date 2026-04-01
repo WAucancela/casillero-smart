@@ -5,6 +5,7 @@ Revises: 001_tablas_base
 Create Date: 2026-03-11
 """
 from alembic import op
+import sqlalchemy as sa
 from passlib.context import CryptContext
 
 revision = '002_vistas_seeds'
@@ -80,9 +81,10 @@ def upgrade() -> None:
     # ⚠️ CAMBIAR CONTRASEÑA ANTES DE PRODUCCIÓN
     password_hash = pwd_context.hash("Admin123!")
     op.execute(
-        "INSERT INTO administradores (nombre, apellido, email, password_hash, rol) "
-        "VALUES ('Super', 'Admin', 'admin@empresa.com', :hash, 'superadmin')",
-        {"hash": password_hash},
+        sa.text(
+            "INSERT INTO administradores (nombre, apellido, email, password_hash, rol) "
+            "VALUES ('Super', 'Admin', 'admin@empresa.com', :hash, 'superadmin')"
+        ).bindparams(hash=password_hash)
     )
 
     # Controladores de cerraduras (uno por piso)
