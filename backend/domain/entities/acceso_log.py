@@ -9,6 +9,7 @@ class ResultadoAcceso(str, Enum):
     DENEGADO_USUARIO_INACTIVO = "denegado_usuario_inactivo"
     DENEGADO_SIN_CASILLERO = "denegado_sin_casillero"
     DENEGADO_FUERA_HORARIO = "denegado_fuera_horario"
+    DENEGADO_DISPOSITIVO_NO_AUTORIZADO = "denegado_dispositivo_no_autorizado"
     ERROR_HARDWARE = "error_hardware"
 
 @dataclass

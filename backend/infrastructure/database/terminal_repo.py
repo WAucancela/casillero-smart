@@ -17,6 +17,7 @@ class TerminalZKTecoModel(Base):
     descripcion    = Column(String(200), nullable=True)
     piso           = Column(Integer,     nullable=True, default=1)
     activo         = Column(Boolean,     default=True)
+    autorizado     = Column(Boolean,     nullable=False, default=False)
     ultimo_contacto = Column(DateTime,   nullable=True)
     ultimo_evento   = Column(DateTime,   nullable=True)
 
@@ -53,3 +54,18 @@ class TerminalRepository:
             select(TerminalZKTecoModel).where(TerminalZKTecoModel.id == terminal_id)
         )
         return result.scalar_one_or_none()
+
+    async def obtener_por_sn(self, sn: str) -> Optional[TerminalZKTecoModel]:
+        result = await self.db.execute(
+            select(TerminalZKTecoModel).where(TerminalZKTecoModel.sn == sn)
+        )
+        return result.scalar_one_or_none()
+
+    async def autorizar(self, terminal_id: int, autorizado: bool) -> Optional[TerminalZKTecoModel]:
+        terminal = await self.obtener_por_id(terminal_id)
+        if not terminal:
+            return None
+        terminal.autorizado = autorizado
+        await self.db.commit()
+        await self.db.refresh(terminal)
+        return terminal

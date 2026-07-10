@@ -142,9 +142,9 @@ function renderTabla() {
           <tr style="font-size:13px;">
             <td class="mono text-muted" style="font-size:10px;">${l.id}</td>
             <td class="mono" style="font-size:11px; white-space:nowrap;">${fmtFechaCorta(l.timestamp)} ${fmtHora(l.timestamp)}</td>
-            <td><strong>${l.usuario || "—"}</strong></td>
-            <td style="font-size:12px;color:#6c757d;">${l.terminal_id || "—"}</td>
-            <td class="mono" style="color:#007bff;">${l.casillero_numero || "—"}</td>
+            <td><strong>${l.usuario ? escapeHtml(l.usuario) : "—"}</strong></td>
+            <td style="font-size:12px;color:#6c757d;">${l.terminal_id ? escapeHtml(l.terminal_id) : "—"}</td>
+            <td class="mono" style="color:#007bff;">${l.casillero_numero ? escapeHtml(l.casillero_numero) : "—"}</td>
             <td>${confianzaHtml(l.confianza_biometrica ?? l.confianza ?? 0)}</td>
             <td>${resultadoBadge(l.resultado)}</td>
           </tr>`).join("")}

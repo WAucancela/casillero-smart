@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 import httpx
 
@@ -31,11 +32,30 @@ async def listar_terminales(
             "piso":          t.piso or 1,
             "activo":        t.ultimo_contacto is not None
                              and (ahora - t.ultimo_contacto).total_seconds() < _TIMEOUT_ACTIVO_SEG,
+            "autorizado":      t.autorizado,
             "ultimo_contacto": t.ultimo_contacto.isoformat() if t.ultimo_contacto else None,
             "ultimo_evento":   t.ultimo_evento.isoformat()   if t.ultimo_evento   else None,
         }
         for t in terminales
     ]
+
+
+class AutorizarTerminalRequest(BaseModel):
+    autorizado: bool
+
+
+# ── PATCH /api/hardware/terminales/{id}/autorizar ─────────────────────────────
+@router.patch("/terminales/{terminal_id}/autorizar", summary="Autorizar o revocar un terminal ZKTeco")
+async def autorizar_terminal(
+    terminal_id: int,
+    body: AutorizarTerminalRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: dict = Depends(solo_super),
+):
+    terminal = await TerminalRepository(db).autorizar(terminal_id, body.autorizado)
+    if not terminal:
+        raise HTTPException(status_code=404, detail="Terminal no encontrada")
+    return {"id": terminal.id, "numero_serie": terminal.sn, "autorizado": terminal.autorizado}
 
 
 # ── GET /api/hardware/controladores ──────────────────────────────────────────

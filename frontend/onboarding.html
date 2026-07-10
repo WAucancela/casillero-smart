@@ -741,8 +741,8 @@ async function renderDispositivos() {
            onclick="${t.activo ? `seleccionarDispositivo(${t.id})` : ""}">
         <div class="device-status-dot ${t.activo ? "online" : "offline"}"></div>
         <div class="device-info">
-          <p class="name">${t.descripcion}</p>
-          <p class="meta">${t.ip_local} · Piso ${t.piso} · ${t.activo ? "En línea" : "Sin conexión"}</p>
+          <p class="name">${escapeHtml(t.descripcion)}</p>
+          <p class="meta">${escapeHtml(t.ip_local)} · Piso ${t.piso} · ${t.activo ? "En línea" : "Sin conexión"}</p>
         </div>
         <i class="fas fa-check-circle device-check"></i>
         ${!t.activo ? `<span class="badge badge-secondary ml-auto">Offline</span>` : ""}
@@ -923,7 +923,7 @@ function iniciarVerificacion() {
   bar.style.display = "block";
   frame.classList.add("scanning");
   icon.classList.add("scanning");
-  status.innerHTML = `<span style="color:#007bff;"><i class="fas fa-spinner fa-spin mr-1"></i>Esperando evento del dispositivo <strong>${nuevoUsuario.dispositivo?.descripcion || nuevoUsuario.dispositivo?.nombre || ""}</strong>…</span>`;
+  status.innerHTML = `<span style="color:#007bff;"><i class="fas fa-spinner fa-spin mr-1"></i>Esperando evento del dispositivo <strong>${escapeHtml(nuevoUsuario.dispositivo?.descripcion || nuevoUsuario.dispositivo?.nombre || "")}</strong>…</span>`;
 
   // Pulsar barra de espera suavemente mientras se hace polling
   let pct = 0;
@@ -1027,7 +1027,7 @@ function mostrarPanelFinal() {
     circle.innerHTML = '<i class="fas fa-check"></i>';
   }
 
-  toast(`✅ <strong>${nuevoUsuario.nombre} ${nuevoUsuario.apellido}</strong> registrado correctamente.`, "success");
+  toast(`✅ <strong>${escapeHtml(nuevoUsuario.nombre)} ${escapeHtml(nuevoUsuario.apellido)}</strong> registrado correctamente.`, "success");
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────

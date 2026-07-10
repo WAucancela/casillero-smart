@@ -85,6 +85,8 @@ if (!requireAuth()) throw new Error("no auth");
 renderLayout("hardware");
 iniciarReloj();
 
+let terminalesActuales = [];
+
 async function cargarHardware() {
   document.getElementById("terminales-container").innerHTML    = `<div class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin fa-2x"></i></div>`;
   document.getElementById("controladores-container").innerHTML = `<div class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin fa-2x"></i></div>`;
@@ -99,6 +101,7 @@ async function cargarHardware() {
     document.getElementById("badge-controladores").textContent = controladores.length;
     document.getElementById("ultimo-refresh").textContent      = new Date().toLocaleTimeString("es-EC");
 
+    terminalesActuales = terminales;
     renderTerminales(terminales);
     renderControladores(controladores);
   } catch (err) {
@@ -121,25 +124,31 @@ function renderTerminales(terminales) {
           <div class="card-header py-2 d-flex align-items-center justify-content-between">
             <h5 class="card-title mb-0" style="font-size:14px;">
               <span class="live-dot" style="background:${t.activo?"#28a745":"#dc3545"};"></span>
-              ${t.descripcion}
+              ${escapeHtml(t.descripcion)}
             </h5>
             <span class="badge badge-${t.activo?"success":"danger"}">${t.activo?"En línea":"Offline"}</span>
           </div>
           <div class="card-body py-2">
             <table class="table table-sm table-borderless mb-0" style="font-size:12px;">
-              <tr><td class="text-muted">IP</td><td class="mono">${t.ip_local || "—"}</td></tr>
+              <tr><td class="text-muted">IP</td><td class="mono">${escapeHtml(t.ip_local) || "—"}</td></tr>
               <tr><td class="text-muted">Modelo</td><td>SenseFace 2A</td></tr>
               <tr><td class="text-muted">Piso</td><td>${t.piso}</td></tr>
-              <tr><td class="text-muted">Serie</td><td class="mono" style="font-size:11px;">${t.numero_serie || "—"}</td></tr>
+              <tr><td class="text-muted">Serie</td><td class="mono" style="font-size:11px;">${t.numero_serie ? escapeHtml(t.numero_serie) : "—"}</td></tr>
               <tr><td class="text-muted">Últ. evento</td><td style="font-size:11px;">${t.ultimo_evento ? fmtHora(t.ultimo_evento) : "—"}</td></tr>
+              <tr><td class="text-muted">Autorización</td><td>
+                <span class="badge badge-${t.autorizado?"success":"danger"}">${t.autorizado?"Autorizado":"No autorizado"}</span>
+              </td></tr>
             </table>
           </div>
           <div class="card-footer py-2">
             <button class="btn btn-xs btn-outline-info mr-2" onclick="pingTerminal(${t.id}, this)">
               <i class="fas fa-satellite-dish mr-1"></i>Ping
             </button>
-            <button class="btn btn-xs btn-outline-warning" onclick="reiniciarDispositivo(${t.id}, '${t.descripcion}')">
+            <button class="btn btn-xs btn-outline-warning mr-2" onclick="reiniciarDispositivo(${t.id})">
               <i class="fas fa-power-off mr-1"></i>Reiniciar
+            </button>
+            <button class="btn btn-xs btn-outline-${t.autorizado?"danger":"success"}" onclick="toggleAutorizacion(${t.id}, ${t.autorizado}, this)">
+              <i class="fas fa-${t.autorizado?"ban":"check"} mr-1"></i>${t.autorizado?"Revocar":"Autorizar"}
             </button>
           </div>
         </div>
@@ -157,8 +166,8 @@ function renderControladores(controladores) {
         <tbody>
           ${controladores.map(c => `
             <tr>
-              <td><strong>${c.nombre || c.descripcion}</strong></td>
-              <td class="mono">${c.ip_local || "—"}</td>
+              <td><strong>${escapeHtml(c.nombre || c.descripcion)}</strong></td>
+              <td class="mono">${escapeHtml(c.ip_local) || "—"}</td>
               <td>${c.piso}</td>
               <td class="mono">${c.num_puertas || 4}</td>
               <td><span class="badge badge-${c.mqtt_conectado ? "success":"secondary"}">
@@ -192,9 +201,27 @@ async function pingTerminal(id, btn) {
   }
 }
 
-async function reiniciarDispositivo(id, nombre) {
+async function toggleAutorizacion(id, autorizadoActual, btn) {
+  const nuevoValor = !autorizadoActual;
+  const verbo = nuevoValor ? "autorizar" : "revocar la autorización de";
+  if (!confirm(`¿Seguro que querés ${verbo} este terminal? Mientras no esté autorizado, sus eventos de acceso no abrirán ningún casillero.`)) return;
+
+  btn.disabled = true;
+  try {
+    await API.hardware.autorizar(id, nuevoValor);
+    toast(nuevoValor ? "Terminal autorizado" : "Autorización revocada", "success");
+    cargarHardware();
+  } catch (err) {
+    toast(`Error: ${err.message}`, "danger");
+    btn.disabled = false;
+  }
+}
+
+async function reiniciarDispositivo(id) {
+  const t = terminalesActuales.find(x => x.id === id);
+  const nombre = t ? t.descripcion : "el terminal";
   if (!confirm(`¿Reiniciar ${nombre}? El dispositivo dejará de registrar accesos por ~30 segundos.`)) return;
-  toast(`Comando de reinicio enviado a ${nombre}…`, "info");
+  toast(`Comando de reinicio enviado a ${escapeHtml(nombre)}…`, "info");
   // POST /hardware/{id}/reiniciar — pendiente de implementar en backend
 }
 

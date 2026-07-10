@@ -25,7 +25,8 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Request, Response, Depends
+from fastapi import APIRouter, Request, Response, Depends, HTTPException
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infrastructure.database.conexion import get_db
@@ -36,9 +37,30 @@ from infrastructure.database.terminal_repo import TerminalRepository
 from infrastructure.hardware.cerradura_service import CerraduraService
 from domain.entities.acceso_log import ResultadoAcceso
 from domain.rules.reglas_acceso import ReglaAcceso
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/iclock", tags=["ZKTeco ADMS"])
+
+
+def _ip_del_request(request: Request) -> str:
+    return (request.headers.get("X-Real-IP") or request.client.host) if request else "desconocida"
+
+
+def verificar_ip_permitida(request: Request) -> None:
+    """
+    Si ADMS_ALLOWED_IPS está configurado, rechaza cualquier request cuya IP
+    de origen no esté en la lista. Vacío (default) = sin restricción por IP,
+    para no romper instalaciones donde los terminales no tienen IP fija.
+    """
+    permitidas = [ip.strip() for ip in settings.ADMS_ALLOWED_IPS.split(",") if ip.strip()]
+    if not permitidas:
+        return
+    if _ip_del_request(request) not in permitidas:
+        logger.warning(f"[ZKTeco] Request rechazado por IP no permitida: {_ip_del_request(request)}")
+        raise HTTPException(status_code=403, detail="IP no autorizada")
+
+
+router = APIRouter(prefix="/iclock", tags=["ZKTeco ADMS"], dependencies=[Depends(verificar_ip_permitida)])
 
 # ── Registro de terminales vistas (en memoria) ────────────────────────────────
 # { SN: { "sn": str, "ip": str, "ultimo_contacto": datetime, "ultimo_evento": datetime|None } }
@@ -272,6 +294,20 @@ async def _procesar_linea_attlog(linea: str, sn_dispositivo: str, db: AsyncSessi
     es_acceso = estado_cod in ("255", "0") or tipo_evento in ("check-in", "access-control")
     if not es_acceso:
         logger.debug(f"[ZKTeco] Evento de tipo '{tipo_evento}' omitido (no es acceso)")
+        return
+
+    # El dispositivo debe estar registrado y autorizado explícitamente por un
+    # administrador antes de que sus eventos puedan abrir un casillero. Sin
+    # este chequeo, cualquiera que conociera esta URL podía hacerse pasar por
+    # un ZKTeco inventando un SN y un PIN válido.
+    terminal = await TerminalRepository(db).obtener_por_sn(sn_dispositivo)
+    if not terminal or not terminal.autorizado:
+        logger.warning(f"[ZKTeco] Dispositivo SN={sn_dispositivo} no autorizado — evento de acceso rechazado")
+        await _registrar_log(
+            db, None, sn_dispositivo,
+            ResultadoAcceso.DENEGADO_DISPOSITIVO_NO_AUTORIZADO,
+            confianza=0.0,
+        )
         return
 
     # Buscar usuario por PIN (el PIN del ZKTeco = usuario_id en nuestra BD)

@@ -214,9 +214,9 @@ function filtrar() {
              onclick="seleccionar(${c.id})"
              style="border-color:${estadoBorder[c.estado]};background:${estadoBg[c.estado]};">
           <div class="casillero-icono">${estadoEmoji[c.estado]}</div>
-          <div class="casillero-numero">${c.numero}</div>
-          <div style="font-size:9px;color:#6c757d;">P${c.piso} · Z${c.zona}</div>
-          ${c.usuario_nombre ? `<div class="casillero-user">${c.usuario_nombre.split(" ")[0]}</div>` : ""}
+          <div class="casillero-numero">${escapeHtml(c.numero)}</div>
+          <div style="font-size:9px;color:#6c757d;">P${c.piso} · Z${escapeHtml(c.zona)}</div>
+          ${c.usuario_nombre ? `<div class="casillero-user">${escapeHtml(c.usuario_nombre.split(" ")[0])}</div>` : ""}
         </div>`).join("")}
     </div>`;
 }
@@ -228,11 +228,11 @@ function seleccionar(id) {
   document.getElementById("panel-detalle").style.display = "block";
   document.getElementById("detalle-body").innerHTML = `
     <table class="table table-sm table-borderless mb-0" style="font-size:13px;">
-      <tr><td class="text-muted">Número</td><td class="mono font-weight-bold">${c.numero}</td></tr>
+      <tr><td class="text-muted">Número</td><td class="mono font-weight-bold">${escapeHtml(c.numero)}</td></tr>
       <tr><td class="text-muted">Piso</td><td>${c.piso}</td></tr>
-      <tr><td class="text-muted">Zona</td><td>${c.zona}</td></tr>
+      <tr><td class="text-muted">Zona</td><td>${escapeHtml(c.zona)}</td></tr>
       <tr><td class="text-muted">Estado</td><td><span class="badge badge-${estadoColor[c.estado]}">${c.estado}</span></td></tr>
-      <tr><td class="text-muted">Usuario</td><td>${c.usuario_nombre || `<span class="text-muted">Libre</span>`}</td></tr>
+      <tr><td class="text-muted">Usuario</td><td>${c.usuario_nombre ? escapeHtml(c.usuario_nombre) : `<span class="text-muted">Libre</span>`}</td></tr>
     </table>`;
 
   // Actualizar etiquetas de botones según estado actual
@@ -258,7 +258,7 @@ async function abrirCasillero() {
   try {
     await API.casilleros.abrir(selectedId);
     const c = todosCasilleros.find(x => x.id === selectedId);
-    toast(`✅ Apertura enviada al casillero <strong>${c.numero}</strong>`, "success");
+    toast(`✅ Apertura enviada al casillero <strong>${escapeHtml(c.numero)}</strong>`, "success");
   } catch (err) {
     toast(`Error: ${err.message}`, "danger");
   }
@@ -272,7 +272,7 @@ async function toggleBloquear() {
   if (!confirm(`¿${accion.charAt(0).toUpperCase()+accion.slice(1)} el casillero ${c.numero}?`)) return;
   try {
     await API.casilleros.cambiarEstado(selectedId, nuevoEstado);
-    toast(`Casillero <strong>${c.numero}</strong> ${accion === "bloquear" ? "bloqueado" : "desbloqueado"}.`, "info");
+    toast(`Casillero <strong>${escapeHtml(c.numero)}</strong> ${accion === "bloquear" ? "bloqueado" : "desbloqueado"}.`, "info");
     await cargarCasilleros();
   } catch (err) {
     toast(`Error: ${err.message}`, "danger");
@@ -287,7 +287,7 @@ async function toggleMantenimiento() {
   if (!confirm(`¿Desea ${accion} el casillero ${c.numero}?`)) return;
   try {
     await API.casilleros.cambiarEstado(selectedId, nuevoEstado);
-    toast(`Casillero <strong>${c.numero}</strong> actualizado.`, "info");
+    toast(`Casillero <strong>${escapeHtml(c.numero)}</strong> actualizado.`, "info");
     await cargarCasilleros();
   } catch (err) {
     toast(`Error: ${err.message}`, "danger");
@@ -304,7 +304,7 @@ async function eliminarCasillero() {
   if (!confirm(`¿Eliminar el casillero ${c.numero}? Esta acción no se puede deshacer.`)) return;
   try {
     await API.casilleros.eliminar(selectedId);
-    toast(`Casillero <strong>${c.numero}</strong> eliminado.`, "success");
+    toast(`Casillero <strong>${escapeHtml(c.numero)}</strong> eliminado.`, "success");
     selectedId = null;
     document.getElementById("panel-detalle").style.display = "none";
     await cargarCasilleros();
@@ -327,7 +327,7 @@ async function guardarNuevoCasillero() {
 
   try {
     const res = await API.casilleros.crear({ numero, piso, zona, controlador_id: controlador, puerto_controlador: puerto });
-    toast(`Casillero <strong>${res.numero}</strong> creado correctamente.`, "success");
+    toast(`Casillero <strong>${escapeHtml(res.numero)}</strong> creado correctamente.`, "success");
     $("#modal-nuevo-casillero").modal("hide");
     document.getElementById("nc-numero").value = "";
     document.getElementById("nc-zona").value = "";

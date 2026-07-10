@@ -214,9 +214,9 @@ function renderTerminales(terminales) {
       <div class="terminal-card ${t.activo ? "online" : "offline"}">
         <div class="d-flex justify-content-between align-items-start">
           <div>
-            <div class="terminal-name">${t.numero_serie}</div>
-            <div style="font-size:11px;color:#6c757d;margin-top:3px;">${t.descripcion}</div>
-            <div style="font-size:11px;color:#6c757d;" class="mono">${t.ip_local}</div>
+            <div class="terminal-name">${escapeHtml(t.numero_serie)}</div>
+            <div style="font-size:11px;color:#6c757d;margin-top:3px;">${escapeHtml(t.descripcion)}</div>
+            <div style="font-size:11px;color:#6c757d;" class="mono">${escapeHtml(t.ip_local)}</div>
           </div>
           <div class="text-right">
             <span class="pulse-ring ${t.activo ? "green" : "red"}"></span>
@@ -236,7 +236,7 @@ function actualizarSelectTerminales(terminales) {
   const val = sel.value;
   // Conservar opción "todas" y agregar las reales
   const opciones = terminales.map(t =>
-    `<option value="${t.numero_serie}" ${val === t.numero_serie ? "selected" : ""}>${t.numero_serie} (${t.ip_local})</option>`
+    `<option value="${escapeHtml(t.numero_serie)}" ${val === t.numero_serie ? "selected" : ""}>${escapeHtml(t.numero_serie)} (${escapeHtml(t.ip_local)})</option>`
   ).join("");
   sel.innerHTML = `<option value="">Todas las terminales</option>${opciones}`;
 }
@@ -324,9 +324,9 @@ function renderStream() {
       <tr class="${esNuevo ? "new-row" : ""} ${denegado ? "denegado" : ""}" style="font-size:13px;">
         <td class="mono text-muted" style="font-size:10px;">${e.id}</td>
         <td class="mono" style="font-size:11px;">${fmtHora(new Date(e.timestamp))}</td>
-        <td><strong>${e.usuario || "Desconocido"}</strong></td>
-        <td style="font-size:11px;color:#6c757d;">${e.terminal_id || "—"}</td>
-        <td class="mono" style="color:#007bff;">${e.casillero_numero || "—"}</td>
+        <td><strong>${e.usuario ? escapeHtml(e.usuario) : "Desconocido"}</strong></td>
+        <td style="font-size:11px;color:#6c757d;">${e.terminal_id ? escapeHtml(e.terminal_id) : "—"}</td>
+        <td class="mono" style="color:#007bff;">${e.casillero_numero ? escapeHtml(e.casillero_numero) : "—"}</td>
         <td>${confianzaHtml(e.confianza_biometrica)}</td>
         <td>${resultadoBadge(e.resultado)}</td>
       </tr>`;
@@ -343,9 +343,9 @@ function renderUltimoEvento(e) {
       <i class="fas ${icon} fa-3x text-${color}"></i>
     </div>
     <table class="table table-sm table-borderless mb-0" style="font-size:12px;">
-      <tr><td class="text-muted">Usuario</td><td><strong>${e.usuario || "Desconocido"}</strong></td></tr>
-      <tr><td class="text-muted">Terminal</td><td class="mono" style="font-size:11px;">${e.terminal_id || "—"}</td></tr>
-      <tr><td class="text-muted">Casillero</td><td class="mono" style="color:#007bff;">${e.casillero_numero || "—"}</td></tr>
+      <tr><td class="text-muted">Usuario</td><td><strong>${e.usuario ? escapeHtml(e.usuario) : "Desconocido"}</strong></td></tr>
+      <tr><td class="text-muted">Terminal</td><td class="mono" style="font-size:11px;">${e.terminal_id ? escapeHtml(e.terminal_id) : "—"}</td></tr>
+      <tr><td class="text-muted">Casillero</td><td class="mono" style="color:#007bff;">${e.casillero_numero ? escapeHtml(e.casillero_numero) : "—"}</td></tr>
       <tr><td class="text-muted">Confianza</td><td>${confianzaHtml(e.confianza_biometrica)}</td></tr>
       <tr><td class="text-muted">Hora</td><td class="mono">${fmtHora(new Date(e.timestamp))}</td></tr>
       <tr><td class="text-muted">Resultado</td><td>${resultadoBadge(e.resultado)}</td></tr>
@@ -364,7 +364,7 @@ function renderAlertas() {
           <span class="text-danger font-weight-bold">${a.resultado.replace(/_/g," ")}</span>
           <span class="mono text-muted">${fmtHora(new Date(a.timestamp))}</span>
         </div>
-        <div style="color:#6c757d;">${a.usuario || "Desconocido"} · ${a.terminal_id || "—"}</div>
+        <div style="color:#6c757d;">${a.usuario ? escapeHtml(a.usuario) : "Desconocido"} · ${a.terminal_id ? escapeHtml(a.terminal_id) : "—"}</div>
       </div>`).join("");
 }
 

@@ -139,9 +139,10 @@ window.API = {
 
   // ── Hardware ──────────────────────────────────────────────
   hardware: {
-    terminales:    ()   => get("/hardware/terminales"),
-    controladores: ()   => get("/hardware/controladores"),
-    ping:          (id) => post(`/hardware/${id}/ping`),
+    terminales:    ()             => get("/hardware/terminales"),
+    controladores: ()             => get("/hardware/controladores"),
+    ping:          (id)           => post(`/hardware/${id}/ping`),
+    autorizar:     (id, valor)    => patch(`/hardware/terminales/${id}/autorizar`, { autorizado: valor }),
   },
 
   // ── Administradores ───────────────────────────────────────

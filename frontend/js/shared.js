@@ -91,6 +91,14 @@ window.generarLogs = function(n = 150) {
 
 window.MOCK_LOGS = window.generarLogs(150);
 
+// ── Escapado de HTML (previene XSS al interpolar datos del servidor) ──
+window.escapeHtml = function(str) {
+  if (str === null || str === undefined) return "";
+  return String(str).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+};
+
 // ── Utilidades de formato ──────────────────────────────
 window.fmtFecha = d => new Date(d).toLocaleDateString("es-EC",{day:"2-digit",month:"short",year:"numeric"});
 window.fmtHora  = d => new Date(d).toLocaleTimeString("es-EC",{hour:"2-digit",minute:"2-digit",second:"2-digit"});

@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     BIOMETRIC_CONFIDENCE_THRESHOLD: float = 0.75
     BIOMETRIC_ENCRYPTION_KEY: str = ""
 
+    # ZKTeco ADMS — IPs permitidas para el webhook /iclock/* (vacío = sin restricción por IP)
+    ADMS_ALLOWED_IPS: str = ""
+
     # Email
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587

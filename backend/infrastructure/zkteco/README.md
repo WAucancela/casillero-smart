@@ -84,6 +84,34 @@ registro_dispositivos.agregar(
 
 ---
 
+## Paso 2.1 — Autorizar el dispositivo (obligatorio)
+
+El backend **no abre ningún casillero para un SN que no haya sido autorizado
+explícitamente**, aunque el handshake y el registro en `terminales_zkteco`
+sean automáticos. Esto evita que cualquiera que conozca la URL del webhook
+pueda simular un ZKTeco inventando un SN.
+
+1. Hacé login en el panel con un usuario `superadmin`.
+2. `GET /api/hardware/terminales` para obtener el `id` interno del terminal
+   (se crea solo tras el primer handshake/evento).
+3. Autorizalo:
+   ```bash
+   curl -X PATCH http://localhost/api/hardware/terminales/<id>/autorizar \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{"autorizado": true}'
+   ```
+
+Hasta que esto se haga, cualquier evento ATTLOG de ese SN se registra en
+`accesos_log` como `denegado_dispositivo_no_autorizado` y **no** abre la
+cerradura, sin importar el PIN ni el horario.
+
+Opcionalmente, si los terminales tienen IP fija, podés restringir también
+por IP de origen con `ADMS_ALLOWED_IPS` en `.env` (lista separada por
+comas). Vacío = sin restricción por IP.
+
+---
+
 ## Paso 3 — Registrar usuarios en el dispositivo
 
 Cuando creas un usuario en el panel web, también debes registrarlo en el SenseFace 2A:
@@ -117,6 +145,7 @@ Body: "42\t2026-03-11 09:30:00\t255\t200\t0\n"
         ▼
 adms_router.py → _procesar_linea_attlog()
         │
+        ├─ Verifica que el SN esté autorizado (ver Paso 2.1) — si no, corta acá
         ├─ Busca usuario PIN=42 en PostgreSQL
         ├─ Verifica reglas (horario 06:00-22:00, estado activo)
         ├─ Si OK → MQTT → controlador → cerradura se abre
@@ -194,3 +223,6 @@ infrastructure/
 **El PIN del usuario no coincide:**
 - El PIN en el dispositivo ZKTeco debe ser igual al `id` del usuario en PostgreSQL
 - Registrar usuarios con `registrar_usuario(pin=usuario.id, ...)`
+
+**Los eventos llegan pero quedan como `denegado_dispositivo_no_autorizado`:**
+- El SN todavía no fue autorizado — ver [Paso 2.1](#paso-21--autorizar-el-dispositivo-obligatorio).

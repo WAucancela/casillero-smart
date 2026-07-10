@@ -249,11 +249,11 @@ function filtrarTabla() {
         <tbody>${filtrados.map(u => `
           <tr>
             <td class="mono text-muted" style="font-size:11px;">${u.id}</td>
-            <td><strong>${u.nombre_completo || u.nombre + " " + u.apellido}</strong></td>
-            <td style="font-size:13px;">${u.email}</td>
-            <td><span class="badge badge-light">${u.departamento}</span></td>
+            <td><strong>${escapeHtml(u.nombre_completo || u.nombre + " " + u.apellido)}</strong></td>
+            <td style="font-size:13px;">${escapeHtml(u.email)}</td>
+            <td><span class="badge badge-light">${escapeHtml(u.departamento)}</span></td>
             <td class="mono">${u.piso_preferido || "—"}</td>
-            <td class="mono" style="color:#007bff;">${u.casillero_numero || `<span class="text-muted">Sin asignar</span>`}</td>
+            <td class="mono" style="color:#007bff;">${u.casillero_numero ? escapeHtml(u.casillero_numero) : `<span class="text-muted">Sin asignar</span>`}</td>
             <td><span class="badge badge-${estadoColor[u.estado] || "secondary"}">
               <i class="fas ${estadoIcon[u.estado] || "fa-circle"} mr-1"></i>${u.estado.replace(/_/g," ")}
             </span></td>
@@ -271,15 +271,15 @@ function verDetalle(id) {
     <div class="row mb-3">
       <div class="col-2 text-center"><i class="fas fa-user-circle fa-4x text-${estadoColor[u.estado] || "secondary"}"></i></div>
       <div class="col-10">
-        <h5 class="mb-0">${u.nombre_completo || u.nombre + " " + u.apellido}</h5>
-        <small class="text-muted">${u.email}</small><br>
+        <h5 class="mb-0">${escapeHtml(u.nombre_completo || u.nombre + " " + u.apellido)}</h5>
+        <small class="text-muted">${escapeHtml(u.email)}</small><br>
         <span class="badge badge-${estadoColor[u.estado]} mt-1">${u.estado.replace(/_/g," ")}</span>
       </div>
     </div>
     <table class="table table-sm table-borderless">
-      <tr><td class="text-muted" style="width:40%;">Departamento</td><td><strong>${u.departamento}</strong></td></tr>
+      <tr><td class="text-muted" style="width:40%;">Departamento</td><td><strong>${escapeHtml(u.departamento)}</strong></td></tr>
       <tr><td class="text-muted">Piso preferido</td><td class="mono">${u.piso_preferido || "—"}</td></tr>
-      <tr><td class="text-muted">Casillero</td><td class="mono" style="color:#007bff;">${u.casillero_numero || "Sin asignar"}</td></tr>
+      <tr><td class="text-muted">Casillero</td><td class="mono" style="color:#007bff;">${u.casillero_numero ? escapeHtml(u.casillero_numero) : "Sin asignar"}</td></tr>
     </table>`;
   document.getElementById("btn-dar-baja").style.display    = u.estado === "inactivo" ? "none" : "inline-block";
   document.getElementById("btn-asignar-cas").style.display = u.casillero_numero ? "none" : "inline-block";
@@ -335,7 +335,7 @@ async function guardarNuevoUsuario() {
     ["nu-nombre","nu-apellido","nu-email"].forEach(id => document.getElementById(id).value = "");
     document.getElementById("nu-depto").value = "";
     document.getElementById("nu-piso").value  = "";
-    toast(`Usuario <strong>${nombre} ${apellido}</strong> creado correctamente.`, "success");
+    toast(`Usuario <strong>${escapeHtml(nombre)} ${escapeHtml(apellido)}</strong> creado correctamente.`, "success");
     cargarUsuarios();
   } catch (err) {
     toast(`Error: ${err.message}`, "danger");
@@ -356,7 +356,7 @@ async function abrirModalCasillero() {
       return;
     }
     select.innerHTML = disponibles.map(c =>
-      `<option value="${c.id}">Casillero ${c.numero} — Piso ${c.piso}</option>`
+      `<option value="${c.id}">Casillero ${escapeHtml(c.numero)} — Piso ${c.piso}</option>`
     ).join("");
   } catch (err) {
     select.innerHTML = `<option value="">Error al cargar</option>`;
@@ -370,7 +370,7 @@ async function confirmarAsignacion() {
     const data = await API.casilleros.asignarManual(casilleroId, selectedId);
     $("#modal-casillero").modal("hide");
     $("#modal-detalle").modal("hide");
-    toast(`Casillero <strong>${data.casillero_numero}</strong> asignado correctamente.`, "success");
+    toast(`Casillero <strong>${escapeHtml(data.casillero_numero)}</strong> asignado correctamente.`, "success");
     cargarUsuarios();
   } catch (err) {
     toast(`Error: ${err.message}`, "danger");
