@@ -1,0 +1,59 @@
+<div class="login-page" style="background: linear-gradient(135deg, #0f1623 0%, #1e2a4a 60%, #0d3060 100%); min-height:100vh; display:flex; align-items:center; justify-content:center;">
+  <div style="width:400px;">
+
+    <!-- Logo -->
+    <div class="text-center mb-4">
+      <div style="width:72px;height:72px;border-radius:18px;background:linear-gradient(135deg,#007bff,#0056b3);display:inline-flex;align-items:center;justify-content:center;font-size:30px;color:#fff;box-shadow:0 8px 32px rgba(0,123,255,0.35);">
+        <i class="fas fa-lock"></i>
+      </div>
+      <p style="font-family:monospace;color:#fff;font-size:20px;letter-spacing:0.12em;margin:14px 0 0;">CASILLEROS</p>
+      <p style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin:4px 0 0;">Sistema de gestión v2.0</p>
+    </div>
+
+    <!-- Card -->
+    <div class="card" style="border-radius:16px;border:none;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+      <div class="card-body" style="padding:32px;">
+        <h5 style="font-weight:600;margin-bottom:24px;color:#1a1f2e;font-size:16px;">
+          <i class="fas fa-shield-alt text-primary mr-2"></i>Panel de administración
+        </h5>
+
+        <!-- Error -->
+        <div *ngIf="error" class="alert mb-3" style="border-radius:8px;font-size:13px;padding:10px 14px;border:none;background:#f8d7da;color:#721c24;border-left:4px solid #dc3545;">
+          <i class="fas fa-exclamation-circle mr-1"></i>{{ error }}
+        </div>
+
+        <form (ngSubmit)="onSubmit()">
+          <div class="form-group">
+            <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:#6c757d;font-weight:600;">Correo electrónico</label>
+            <div style="position:relative;">
+              <input type="email" class="form-control" placeholder="admin@empresa.com"
+                     [(ngModel)]="email" name="email" autocomplete="username" autofocus
+                     style="padding-right:44px;border:1.5px solid #e9ecef;border-radius:8px;height:46px;font-size:14px;">
+              <i class="fas fa-envelope" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#adb5bd;font-size:14px;"></i>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:#6c757d;font-weight:600;">Contraseña</label>
+            <div style="position:relative;">
+              <input type="password" class="form-control" placeholder="••••••••"
+                     [(ngModel)]="password" name="password" autocomplete="current-password"
+                     style="padding-right:44px;border:1.5px solid #e9ecef;border-radius:8px;height:46px;font-size:14px;">
+              <i class="fas fa-lock" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#adb5bd;font-size:14px;"></i>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" [disabled]="loading"
+                  style="height:46px;font-size:14px;font-weight:600;border-radius:8px;">
+            <span *ngIf="loading"><i class="fas fa-spinner fa-spin mr-1"></i>Ingresando...</span>
+            <span *ngIf="!loading"><i class="fas fa-sign-in-alt mr-1"></i>Ingresar</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="text-center mt-3" style="font-size:11px;color:rgba(255,255,255,0.3);">
+      Telconet &copy; 2025 — Redes LAN
+    </div>
+  </div>
+</div>

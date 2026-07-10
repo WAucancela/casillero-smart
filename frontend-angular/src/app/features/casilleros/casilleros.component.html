@@ -1,0 +1,246 @@
+<!-- Toast -->
+<div *ngIf="toastMsg" class="toast-container">
+  <div class="alert" [ngClass]="'alert-' + toastTipo" style="min-width:280px; box-shadow:0 4px 16px rgba(0,0,0,.15);">
+    {{ toastMsg }}
+  </div>
+</div>
+
+<!-- Header -->
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0"><i class="fas fa-boxes mr-2 text-primary"></i>Gestión de Casilleros</h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item">Inicio</li>
+          <li class="breadcrumb-item active">Casilleros</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+
+  <!-- Loading / Error -->
+  <div *ngIf="loading" class="text-center py-5 text-muted">
+    <i class="fas fa-spinner fa-spin fa-2x mb-3 d-block"></i><span>Cargando casilleros…</span>
+  </div>
+  <div *ngIf="error && !loading" class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle mr-2"></i>{{ error }}
+    <button class="btn btn-sm btn-outline-danger ml-3" (click)="cargar()">
+      <i class="fas fa-redo mr-1"></i>Reintentar
+    </button>
+  </div>
+
+  <div *ngIf="!loading && !error">
+
+    <!-- Stats (clickables para filtrar) -->
+    <div class="row">
+      <div class="col-lg-3 col-6" *ngFor="let s of statsData">
+        <div class="small-box" [ngClass]="'bg-' + s.color"
+             style="cursor:pointer;" (click)="filtrarPorEstado(s.estado)">
+          <div class="inner"><h3>{{ s.value }}</h3><p>{{ s.label }}</p></div>
+          <div class="icon"><i class="fas" [ngClass]="s.icon"></i></div>
+          <div class="small-box-footer">
+            <span *ngIf="filtroEstado === s.estado"><i class="fas fa-check mr-1"></i>Filtrado</span>
+            <span *ngIf="filtroEstado !== s.estado">Click para filtrar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card card-outline card-secondary mb-3">
+      <div class="card-body py-2" style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
+        <div class="form-group mb-0">
+          <label style="font-size:11px; text-transform:uppercase; color:#6c757d;">Piso</label>
+          <select class="form-control form-control-sm" style="width:120px;"
+                  [(ngModel)]="filtroPiso" (ngModelChange)="aplicarFiltros()">
+            <option value="">Todos</option>
+            <option value="1">Piso 1</option>
+            <option value="2">Piso 2</option>
+            <option value="3">Piso 3</option>
+          </select>
+        </div>
+        <div class="form-group mb-0">
+          <label style="font-size:11px; text-transform:uppercase; color:#6c757d;">Estado</label>
+          <select class="form-control form-control-sm" style="width:150px;"
+                  [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltros()">
+            <option value="">Todos</option>
+            <option value="libre">Libre</option>
+            <option value="ocupado">Ocupado</option>
+            <option value="bloqueado">Bloqueado</option>
+            <option value="mantenimiento">Mantenimiento</option>
+          </select>
+        </div>
+        <div class="ml-auto d-flex" style="gap:8px;">
+          <button class="btn btn-outline-secondary btn-sm" (click)="cargar()">
+            <i class="fas fa-sync mr-1"></i>Actualizar
+          </button>
+          <button class="btn btn-primary btn-sm" (click)="abrirModalNuevo()">
+            <i class="fas fa-plus mr-1"></i>Nuevo Casillero
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grilla + Panel Detalle -->
+    <div class="row">
+
+      <!-- Grilla -->
+      <div [ngClass]="seleccionado ? 'col-lg-9' : 'col-12'">
+        <div class="card card-outline card-primary elevation-2">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-th mr-2"></i>Vista de Grilla</h3>
+            <div class="card-tools">
+              <span class="badge badge-secondary" style="font-family:monospace;">
+                {{ filtrados.length }} casilleros
+              </span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div *ngIf="filtrados.length === 0" class="text-center py-5 text-muted">
+              <i class="fas fa-inbox fa-2x mb-2 d-block"></i>Sin resultados para este filtro
+            </div>
+            <div class="grid-casilleros">
+              <div *ngFor="let c of filtrados"
+                   class="casillero-cell"
+                   [class.selected]="isSelected(c)"
+                   [style.border-color]="estadoBorder[c.estado]"
+                   [style.background]="estadoBg[c.estado]"
+                   (click)="seleccionar(c)">
+                <div style="font-size:20px;">{{ estadoEmoji[c.estado] }}</div>
+                <div style="font-weight:700; font-size:12px; font-family:monospace;">{{ c.numero }}</div>
+                <div style="font-size:9px; color:#6c757d;">P{{ c.piso }} · Z{{ c.zona }}</div>
+                <div *ngIf="c.usuario_nombre" style="font-size:9px; color:#007bff; margin-top:2px;">
+                  {{ primerNombre(c.usuario_nombre) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Detalle lateral -->
+      <div class="col-lg-3" *ngIf="seleccionado">
+        <div class="card card-outline card-info elevation-2">
+          <div class="card-header bg-info text-white">
+            <h3 class="card-title text-white">
+              <i class="fas fa-info-circle mr-2"></i>Detalle
+            </h3>
+            <div class="card-tools">
+              <button class="btn btn-tool text-white" (click)="seleccionado = null">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <table class="table table-sm table-borderless mb-0" style="font-size:13px;">
+              <tr><td class="text-muted pl-3">Número</td>
+                  <td class="font-weight-bold" style="font-family:monospace;">{{ seleccionado.numero }}</td></tr>
+              <tr><td class="text-muted pl-3">Piso</td><td>{{ seleccionado.piso }}</td></tr>
+              <tr><td class="text-muted pl-3">Zona</td><td>{{ seleccionado.zona }}</td></tr>
+              <tr><td class="text-muted pl-3">Estado</td>
+                  <td><span class="badge" [ngClass]="'badge-' + estadoColor[seleccionado.estado]">
+                    {{ seleccionado.estado }}
+                  </span></td></tr>
+              <tr><td class="text-muted pl-3">Usuario</td>
+                  <td>
+                    <span *ngIf="seleccionado.usuario_nombre">{{ seleccionado.usuario_nombre }}</span>
+                    <span *ngIf="!seleccionado.usuario_nombre" class="text-muted">Libre</span>
+                  </td></tr>
+            </table>
+          </div>
+          <div class="card-footer" style="display:flex; flex-direction:column; gap:6px;">
+            <button class="btn btn-success btn-sm btn-block"
+                    [disabled]="!puedeAbrir"
+                    (click)="abrirCasillero()">
+              <i class="fas fa-lock-open mr-1"></i>Abrir Remotamente
+            </button>
+            <button class="btn btn-sm btn-block"
+                    [ngClass]="seleccionado.estado === 'bloqueado' ? 'btn-outline-warning' : 'btn-warning'"
+                    (click)="toggleBloquear()">
+              <i class="fas fa-minus-circle mr-1"></i>
+              {{ seleccionado.estado === 'bloqueado' ? 'Desbloquear' : 'Bloquear' }}
+            </button>
+            <button class="btn btn-sm btn-block"
+                    [ngClass]="seleccionado.estado === 'mantenimiento' ? 'btn-outline-secondary' : 'btn-secondary'"
+                    (click)="toggleMantenimiento()">
+              <i class="fas fa-tools mr-1"></i>
+              {{ seleccionado.estado === 'mantenimiento' ? 'Quitar Mantenimiento' : 'Mantenimiento' }}
+            </button>
+            <button class="btn btn-danger btn-sm btn-block"
+                    [disabled]="!puedeEliminar"
+                    (click)="eliminarCasillero()">
+              <i class="fas fa-trash mr-1"></i>Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL NUEVO CASILLERO ════════════════════════════════ -->
+<div *ngIf="modalNuevo" class="modal-backdrop-custom" (click)="modalNuevo = false"></div>
+<div *ngIf="modalNuevo" class="modal-custom">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="fas fa-plus-circle mr-2"></i>Nuevo Casillero</h5>
+        <button class="close text-white" (click)="modalNuevo = false"><span>&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group col-6">
+            <label>Número <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" placeholder="Ej: C-101"
+                   [class.is-invalid]="erroresNuevo['numero']"
+                   [(ngModel)]="nuevoForm.numero">
+            <div *ngIf="erroresNuevo['numero']" class="invalid-feedback">{{ erroresNuevo['numero'] }}</div>
+          </div>
+          <div class="form-group col-3">
+            <label>Piso <span class="text-danger">*</span></label>
+            <select class="form-control" [(ngModel)]="nuevoForm.piso">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </div>
+          <div class="form-group col-3">
+            <label>Zona <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" placeholder="Ej: A"
+                   [class.is-invalid]="erroresNuevo['zona']"
+                   [(ngModel)]="nuevoForm.zona">
+            <div *ngIf="erroresNuevo['zona']" class="invalid-feedback">{{ erroresNuevo['zona'] }}</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ID Controlador <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" placeholder="Ej: CTRL-01"
+                 [class.is-invalid]="erroresNuevo['controlador_id']"
+                 [(ngModel)]="nuevoForm.controlador_id">
+          <div *ngIf="erroresNuevo['controlador_id']" class="invalid-feedback">{{ erroresNuevo['controlador_id'] }}</div>
+        </div>
+        <div class="form-group">
+          <label>Puerto Controlador <span class="text-danger">*</span></label>
+          <input type="number" class="form-control" placeholder="Ej: 1" min="1"
+                 [class.is-invalid]="erroresNuevo['puerto_controlador']"
+                 [(ngModel)]="nuevoForm.puerto_controlador">
+          <div *ngIf="erroresNuevo['puerto_controlador']" class="invalid-feedback">{{ erroresNuevo['puerto_controlador'] }}</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="modalNuevo = false">Cancelar</button>
+        <button class="btn btn-primary" (click)="guardarNuevoCasillero()" [disabled]="guardandoNuevo">
+          <i class="fas mr-1" [ngClass]="guardandoNuevo ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+          {{ guardandoNuevo ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

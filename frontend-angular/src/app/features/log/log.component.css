@@ -1,0 +1,35 @@
+.filtros-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.filtro-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #6c757d;
+  margin-bottom: 3px;
+}
+
+.filtro-sep {
+  width: 1px;
+  height: 32px;
+  background: #dee2e6;
+  align-self: flex-end;
+}
+
+.tabla-wrapper {
+  overflow-x: auto;
+}
+
+.tabla-wrapper table {
+  font-size: 13px;
+  min-width: 780px;
+}
+
+.log-denegado td:first-child {
+  border-left: 3px solid #dc3545;
+}

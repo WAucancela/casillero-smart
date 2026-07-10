@@ -1,0 +1,153 @@
+<!-- Header -->
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0"><i class="fas fa-chart-bar mr-2 text-primary"></i>Reportes</h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item">Inicio</li>
+          <li class="breadcrumb-item active">Reportes</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+
+  <!-- Filtros -->
+  <div class="card card-outline card-secondary mb-3">
+    <div class="card-body py-2" style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
+      <div class="form-group mb-0">
+        <label style="font-size:11px; text-transform:uppercase; color:#6c757d;">Período</label>
+        <select class="form-control form-control-sm" style="width:160px;"
+                [(ngModel)]="periodo" (ngModelChange)="onPeriodoChange()">
+          <option value="7">Últimos 7 días</option>
+          <option value="30">Últimos 30 días</option>
+          <option value="90">Últimos 90 días</option>
+          <option value="custom">Personalizado</option>
+        </select>
+      </div>
+      <div *ngIf="mostrarCustom" class="form-group mb-0">
+        <label style="font-size:11px; text-transform:uppercase; color:#6c757d;">Desde</label>
+        <input type="date" class="form-control form-control-sm" style="width:140px;" [(ngModel)]="fechaDesde">
+      </div>
+      <div *ngIf="mostrarCustom" class="form-group mb-0">
+        <label style="font-size:11px; text-transform:uppercase; color:#6c757d;">Hasta</label>
+        <input type="date" class="form-control form-control-sm" style="width:140px;" [(ngModel)]="fechaHasta">
+      </div>
+      <button class="btn btn-primary btn-sm" (click)="cargar()" [disabled]="loading">
+        <i class="fas mr-1" [ngClass]="loading ? 'fa-spinner fa-spin' : 'fa-search'"></i>
+        Generar
+      </button>
+      <div class="ml-auto">
+        <button class="btn btn-outline-success btn-sm" (click)="exportCSV()" [disabled]="!datosAccesos">
+          <i class="fas fa-file-csv mr-1"></i>Exportar CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle mr-2"></i>{{ error }}
+    <button class="btn btn-sm btn-outline-danger ml-3" (click)="cargar()">
+      <i class="fas fa-redo mr-1"></i>Reintentar
+    </button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="row">
+    <div *ngIf="loading" class="col-12 text-center py-4 text-muted">
+      <i class="fas fa-spinner fa-spin fa-2x mb-2 d-block"></i>Cargando reportes…
+    </div>
+    <ng-container *ngIf="!loading">
+      <div class="col-lg-3 col-md-6 col-sm-6" *ngFor="let k of kpis">
+        <div class="small-box" [ngClass]="'bg-' + k.color">
+          <div class="inner"><h3>{{ k.value }}</h3><p>{{ k.label }}</p></div>
+          <div class="icon"><i class="fas" [ngClass]="k.icon"></i></div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Gráficas fila 1 -->
+  <div class="row" *ngIf="!loading && !error">
+    <div class="col-lg-8">
+      <div class="card card-primary card-outline elevation-2">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-chart-line mr-2"></i>Accesos por día</h3>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas #chartDiarioCanvas></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card card-info card-outline elevation-2">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-chart-bar mr-2"></i>Por hora del día</h3>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas #chartHoraCanvas></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficas fila 2 -->
+  <div class="row" *ngIf="!loading && !error">
+    <div class="col-lg-6">
+      <div class="card card-warning card-outline elevation-2">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Por departamento</h3>
+        </div>
+        <div class="card-body">
+          <div style="height:220px; position:relative;">
+            <canvas #chartDeptoCanvas></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card card-success card-outline elevation-2">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-table mr-2"></i>Resumen por piso</h3>
+        </div>
+        <div class="card-body p-0">
+          <div *ngIf="pisos.length === 0" class="text-center py-4 text-muted">Sin datos</div>
+          <table *ngIf="pisos.length > 0" class="table table-sm table-striped mb-0" style="font-size:13px;">
+            <thead class="thead-light">
+              <tr><th>Piso</th><th>Total</th><th>Ocupados</th><th>Libres</th><th>% Ocup.</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of pisos">
+                <td class="font-weight-bold">Piso {{ p.piso }}</td>
+                <td style="font-family:monospace;">{{ p.total }}</td>
+                <td style="font-family:monospace; color:#007bff;">{{ p.ocupados }}</td>
+                <td style="font-family:monospace; color:#28a745;">{{ p.libres }}</td>
+                <td>
+                  <div class="d-flex align-items-center" style="gap:6px;">
+                    <div class="progress progress-sm mb-0" style="min-width:60px; flex:1;">
+                      <div class="progress-bar" [ngClass]="'bg-' + pctColor(p.porcentaje_ocupacion)"
+                           [style.width.%]="p.porcentaje_ocupacion"></div>
+                    </div>
+                    <span style="font-family:monospace; font-size:11px;">{{ p.porcentaje_ocupacion }}%</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

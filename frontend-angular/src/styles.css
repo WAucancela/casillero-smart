@@ -1,0 +1,83 @@
+/* Variables de color del proyecto original */
+:root {
+  --primary:   #007bff;
+  --success:   #28a745;
+  --danger:    #dc3545;
+  --warning:   #ffc107;
+  --info:      #17a2b8;
+  --secondary: #6c757d;
+}
+
+body { font-size: 14px; }
+
+/* Casillero grid (de shared.css original) */
+.casillero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+}
+
+.casillero-card {
+  border-radius: 10px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  border: 2px solid transparent;
+}
+
+.casillero-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+.casillero-card.libre      { background: #f0fff4; border-color: #28a745; }
+.casillero-card.ocupado    { background: #fff3f3; border-color: #dc3545; }
+.casillero-card.mantenimiento { background: #fffbe6; border-color: #ffc107; }
+.casillero-card.inactivo   { background: #f8f9fa; border-color: #adb5bd; }
+
+/* Stat cards */
+.stat-card { border-radius: 10px; padding: 20px; color: #fff; }
+.stat-card .stat-value { font-size: 32px; font-weight: 700; }
+.stat-card .stat-label { font-size: 12px; opacity: .85; }
+
+/* Toast helpers */
+.toast-container { position: fixed; top: 70px; right: 20px; z-index: 9999; }
+
+/* Celda de casillero en grilla */
+.casillero-cell {
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 10px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+  min-width: 80px;
+}
+
+.casillero-cell:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+.casillero-cell.selected { outline: 3px solid #0066ff; outline-offset: 2px; }
+
+/* Modales Angular (reemplazan jQuery .modal()) */
+.modal-backdrop-custom {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 1040;
+}
+
+.modal-custom {
+  position: fixed; inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.modal-custom .modal-dialog {
+  width: 100%;
+  max-width: 520px;
+  margin: auto;
+}
+
+.modal-custom .modal-content {
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}

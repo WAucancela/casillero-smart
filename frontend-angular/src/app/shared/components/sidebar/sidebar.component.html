@@ -1,0 +1,39 @@
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+  <a routerLink="/dashboard" class="brand-link">
+    <span class="brand-text font-weight-light">Casillero Smart</span>
+  </a>
+
+  <div class="sidebar">
+    <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+      <div class="image">
+        <i class="fas fa-user-circle fa-2x text-white"></i>
+      </div>
+      <div class="info">
+        <a class="d-block text-truncate" style="max-width:140px;">{{ nombre }}</a>
+        <span class="badge badge-secondary" style="font-size:9px;">{{ rolLabel }}</span>
+      </div>
+    </div>
+
+    <nav class="mt-2">
+      <ul class="nav nav-pills nav-sidebar flex-column" id="sidebar-nav">
+        <li class="nav-item" *ngFor="let item of navItems">
+          <a [routerLink]="item.route" routerLinkActive="active" class="nav-link">
+            <i class="nav-icon fas {{ item.icon }}"></i>
+            <p>
+              {{ item.label }}
+              <span *ngIf="item.badge" class="badge {{ item.badge.cls }} right" style="font-size:9px;">
+                {{ item.badge.text }}
+              </span>
+            </p>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" style="cursor:pointer;" (click)="logout()">
+            <i class="nav-icon fas fa-sign-out-alt"></i>
+            <p>Cerrar Sesión</p>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</aside>

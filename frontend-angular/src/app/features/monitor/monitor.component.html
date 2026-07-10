@@ -1,0 +1,231 @@
+<!-- Header -->
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0">
+          <i class="fas fa-broadcast-tower mr-2 text-success"></i>Monitor en Tiempo Real
+        </h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item">Inicio</li>
+          <li class="breadcrumb-item active">Monitor</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+
+  <!-- Terminales -->
+  <div class="row mb-3">
+    <div *ngIf="loadingTerminales" class="col-12 text-center text-muted py-3">
+      <i class="fas fa-spinner fa-spin mr-2"></i>Cargando terminales…
+    </div>
+    <div *ngIf="!loadingTerminales && terminales.length === 0" class="col-12">
+      <div class="callout callout-warning" style="font-size:13px;">
+        <i class="fas fa-exclamation-triangle mr-1"></i>
+        No hay terminales registradas. Las terminales ZKTeco aparecen aquí al conectarse.
+      </div>
+    </div>
+    <div *ngFor="let t of terminales" class="col-lg-4 col-md-6 col-sm-12">
+      <div class="terminal-card" [ngClass]="t.activo ? 'online' : 'offline'">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div style="font-family:monospace; font-size:12px; font-weight:700;">{{ t.numero_serie }}</div>
+            <div style="font-size:11px; color:#6c757d; margin-top:3px;">{{ t.descripcion }}</div>
+            <div style="font-size:11px; color:#6c757d; font-family:monospace;">{{ t.ip_local }}</div>
+          </div>
+          <div class="text-right">
+            <span class="pulse-ring" [ngClass]="t.activo ? 'green' : 'red'"></span>
+            <div style="font-size:10px; margin-top:5px;" [ngClass]="t.activo ? 'text-success' : 'text-danger'">
+              {{ t.activo ? 'ONLINE' : 'OFFLINE' }}
+            </div>
+          </div>
+        </div>
+        <div class="mt-2 d-flex justify-content-between" style="font-size:11px; color:#6c757d;">
+          <span>Piso {{ t.piso }}</span>
+          <span>Último: {{ fmtContacto(t.ultimo_contacto) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contadores -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card card-success card-outline elevation-2">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-lg-3 col-6" *ngFor="let c of contadoresData">
+              <div class="stat-mini">
+                <div class="val" [ngClass]="'text-' + c.color">{{ c.value }}</div>
+                <div class="lbl"><i class="fas mr-1" [ngClass]="c.icon"></i>{{ c.label }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stream + Panel lateral -->
+  <div class="row">
+
+    <!-- Stream de eventos -->
+    <div class="col-lg-9">
+      <div class="card card-outline card-primary elevation-2">
+        <div class="card-header">
+          <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
+            <span class="pulse-ring" [ngClass]="paused ? 'red' : 'green'"></span>
+            <span>{{ paused ? 'PAUSADO' : 'EN VIVO' }}</span>
+            <span style="font-family:monospace; font-size:12px; color:#6c757d;">
+              {{ filtrados.length }} eventos
+            </span>
+          </h3>
+          <div class="card-tools" style="display:flex; gap:6px; align-items:center;">
+            <span style="font-size:10px; color:#6c757d;">{{ ultimoPoll }}</span>
+            <button *ngIf="paused" class="btn btn-sm btn-success" (click)="toggleStream()">
+              <i class="fas fa-play"></i> Reanudar
+            </button>
+            <button *ngIf="!paused" class="btn btn-sm btn-warning" (click)="toggleStream()">
+              <i class="fas fa-pause"></i> Pausar
+            </button>
+            <button class="btn btn-sm btn-danger" (click)="limpiarStream()">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+
+          <!-- Filtros stream -->
+          <div class="p-3 border-bottom bg-light d-flex flex-wrap" style="gap:8px; align-items:center;">
+            <select class="form-control form-control-sm" style="width:200px;"
+                    [(ngModel)]="filtroTerminal" (ngModelChange)="aplicarFiltros()">
+              <option value="">Todas las terminales</option>
+              <option *ngFor="let t of terminalesSelect" [value]="t.value">{{ t.label }}</option>
+            </select>
+            <select class="form-control form-control-sm" style="width:160px;"
+                    [(ngModel)]="filtroResultado" (ngModelChange)="aplicarFiltros()">
+              <option value="">Todos los resultados</option>
+              <option value="exitoso">Solo exitosos</option>
+              <option value="denegado">Solo denegados</option>
+            </select>
+          </div>
+
+          <!-- Tabla stream -->
+          <div style="max-height:480px; overflow-y:auto;">
+            <table class="table table-sm table-hover mb-0">
+              <thead class="thead-light" style="position:sticky; top:0; z-index:5;">
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Hora</th>
+                  <th>Usuario</th>
+                  <th>Terminal</th>
+                  <th>Casillero</th>
+                  <th>Confianza</th>
+                  <th>Resultado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="filtrados.length === 0">
+                  <td colspan="7" class="text-center text-muted py-4">
+                    <i class="fas fa-satellite-dish fa-2x mb-2 d-block"></i>
+                    Sin eventos por hoy
+                  </td>
+                </tr>
+                <tr *ngFor="let e of filtrados"
+                    [ngClass]="{ 'new-row': isNuevo(e), 'den': e.resultado !== 'exitoso' }"
+                    style="font-size:13px;">
+                  <td style="font-family:monospace; font-size:10px; color:#6c757d;">{{ e.id }}</td>
+                  <td style="font-family:monospace; font-size:11px;">{{ fmtHora(e.timestamp) }}</td>
+                  <td><strong>{{ e.usuario || 'Desconocido' }}</strong></td>
+                  <td style="font-size:11px; color:#6c757d;">{{ e.terminal_id || '—' }}</td>
+                  <td style="font-family:monospace; color:#007bff;">{{ e.casillero_numero || '—' }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="'badge-' + confianzaColor(e.confianza_biometrica)">
+                      {{ confianzaPct(e.confianza_biometrica) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="resultadoBadge(e.resultado).cls">
+                      {{ resultadoBadge(e.resultado).text }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel lateral -->
+    <div class="col-lg-3">
+
+      <!-- Último evento -->
+      <div class="card card-outline card-info elevation-2">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-bolt mr-2"></i>Último Evento</h3>
+        </div>
+        <div class="card-body">
+          <div *ngIf="!ultimoEvento" class="text-center text-muted py-3" style="font-size:13px;">
+            <i class="fas fa-satellite-dish fa-2x mb-2 d-block"></i>Esperando eventos…
+          </div>
+          <div *ngIf="ultimoEvento">
+            <div class="text-center mb-3">
+              <i class="fas fa-3x"
+                 [ngClass]="ultimoEvento.resultado === 'exitoso' ? 'fa-check-circle text-success' : 'fa-times-circle text-danger'">
+              </i>
+            </div>
+            <table class="table table-sm table-borderless mb-0" style="font-size:12px;">
+              <tr><td class="text-muted">Usuario</td><td><strong>{{ ultimoEvento.usuario || 'Desconocido' }}</strong></td></tr>
+              <tr><td class="text-muted">Terminal</td><td style="font-family:monospace; font-size:11px;">{{ ultimoEvento.terminal_id || '—' }}</td></tr>
+              <tr><td class="text-muted">Casillero</td><td style="font-family:monospace; color:#007bff;">{{ ultimoEvento.casillero_numero || '—' }}</td></tr>
+              <tr><td class="text-muted">Confianza</td>
+                <td>
+                  <span class="badge" [ngClass]="'badge-' + confianzaColor(ultimoEvento.confianza_biometrica)">
+                    {{ confianzaPct(ultimoEvento.confianza_biometrica) }}
+                  </span>
+                </td>
+              </tr>
+              <tr><td class="text-muted">Hora</td><td style="font-family:monospace;">{{ fmtHora(ultimoEvento.timestamp) }}</td></tr>
+              <tr><td class="text-muted">Resultado</td>
+                <td>
+                  <span class="badge" [ngClass]="resultadoBadge(ultimoEvento.resultado).cls">
+                    {{ resultadoBadge(ultimoEvento.resultado).text }}
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alertas -->
+      <div class="card card-danger card-outline elevation-2">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-exclamation-triangle mr-2"></i>Alertas</h3>
+          <div class="card-tools">
+            <span class="badge badge-danger">{{ alertas.length }}</span>
+          </div>
+        </div>
+        <div class="card-body p-2" style="max-height:300px; overflow-y:auto;">
+          <div *ngIf="alertas.length === 0" class="text-center text-muted py-2" style="font-size:12px;">
+            Sin alertas
+          </div>
+          <div *ngFor="let a of alertas" class="alerta-item">
+            <div class="d-flex justify-content-between">
+              <span class="text-danger font-weight-bold">{{ a.resultado.replace('_', ' ') }}</span>
+              <span style="font-family:monospace; color:#6c757d;">{{ fmtHora(a.timestamp) }}</span>
+            </div>
+            <div style="color:#6c757d;">{{ a.usuario || 'Desconocido' }} · {{ a.terminal_id || '—' }}</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
