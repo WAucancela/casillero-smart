@@ -7,6 +7,7 @@ from config.logging import setup_logging
 from infrastructure.database.conexion import init_db
 from infrastructure.zkteco.adms_router import router as zkteco_router
 from infrastructure.hardware.controlador_mqtt import controlador_mqtt
+from infrastructure.hardware.heartbeat_service import registrar_heartbeat
 from infrastructure.database.terminal_repo import TerminalZKTecoModel  # registrar en metadata
 
 setup_logging()
@@ -41,6 +42,8 @@ async def startup():
     await init_db()
     try:
         controlador_mqtt.conectar()
+        import asyncio
+        registrar_heartbeat(asyncio.get_running_loop())
     except Exception as e:
         import logging
         logging.getLogger(__name__).warning(f"No se pudo conectar al broker MQTT: {e}")

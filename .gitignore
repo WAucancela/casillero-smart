@@ -1,5 +1,6 @@
 # ══ NUNCA subir a git ══
 .env
+firmware/esp32-controlador/config.h
 mosquitto/config/passwd
 mosquitto/data/
 mosquitto/log/
