@@ -91,15 +91,16 @@ services:
     # ports:
     #   - "8000:8000"
 
-  # ── Nginx (reverse proxy + frontend estático) ────────────────
+  # ── Nginx (reverse proxy + frontend Angular compilado) ───────
   nginx:
-    image: nginx:1.25-alpine
+    build:
+      context: ./frontend-angular
+      dockerfile: Dockerfile
     container_name: casilleros-nginx
     restart: unless-stopped
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./frontend:/usr/share/nginx/html:ro
       # Descomentar para HTTPS con certificados propios:
       # - ./nginx/certs:/etc/nginx/certs:ro
     ports:
@@ -109,7 +110,8 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+      # 127.0.0.1 explícito: nginx solo escucha IPv4 y localhost resuelve a ::1 en Alpine
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
