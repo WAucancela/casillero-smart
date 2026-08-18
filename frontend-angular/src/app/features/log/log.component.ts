@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { NgIf, NgFor, NgClass, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api/api.service';
@@ -45,7 +45,7 @@ export class LogComponent implements OnInit {
   // Terminales disponibles en los datos
   terminalesDisponibles: string[] = [];
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     const hoy   = new Date();
@@ -67,10 +67,12 @@ export class LogComponent implements OnInit {
           this.extraerTerminales();
           this.aplicarFiltros();
           this.loading = false;
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.error   = err?.error?.detail ?? 'Error al cargar el log.';
           this.loading = false;
+          this.cdr.detectChanges();
         },
       });
   }

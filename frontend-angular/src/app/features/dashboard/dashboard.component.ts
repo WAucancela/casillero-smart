@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { NgIf, NgFor, NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -54,7 +54,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private dataLoaded = false;
   private viewReady  = false;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.cargar();
@@ -85,12 +85,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.buildLeyenda(ocupacion);
         this.loading    = false;
         this.dataLoaded = true;
+        // App zoneless: forzamos el repintado tras la actualización asíncrona.
+        this.cdr.detectChanges();
         if (this.viewReady) this.renderCharts();
         else setTimeout(() => { if (this.viewReady) this.renderCharts(); }, 100);
       },
       error: (err) => {
         this.error   = err?.error?.detail ?? 'Error al cargar datos del dashboard.';
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { NgIf, NgFor, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -54,7 +54,7 @@ export class ReportesComponent implements OnInit, AfterViewInit, OnDestroy {
   private viewReady         = false;
   private pendingRender: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void   { this.cargar(); }
 
@@ -102,12 +102,14 @@ export class ReportesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.buildKPIs(accesos.resumen, ocupacion.resumen);
         this.pisos   = ocupacion.por_piso ?? [];
         this.loading = false;
+        this.cdr.detectChanges();
         if (this.viewReady) this.renderCharts(accesos.detalle ?? []);
         else this.pendingRender = accesos.detalle ?? [];
       },
       error: (err) => {
         this.error   = err?.error?.detail ?? 'Error al cargar reportes.';
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }

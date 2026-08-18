@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { NgIf, NgFor, NgClass } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../core/api/api.service';
@@ -44,7 +44,7 @@ export class HardwareComponent implements OnInit, OnDestroy {
 
   private refreshId: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.cargar();
@@ -73,10 +73,12 @@ export class HardwareComponent implements OnInit, OnDestroy {
         const now = new Date();
         this.ultimaActualizacion =
           `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.error   = err?.error?.detail ?? 'Error al cargar dispositivos.';
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -93,12 +95,14 @@ export class HardwareComponent implements OnInit, OnDestroy {
         dispositivo._pinging    = false;
         dispositivo._pingResult = 'ok';
         dispositivo.activo      = true;
-        setTimeout(() => { dispositivo._pingResult = null; }, 4000);
+        this.cdr.detectChanges();
+        setTimeout(() => { dispositivo._pingResult = null; this.cdr.detectChanges(); }, 4000);
       },
       error: () => {
         dispositivo._pinging    = false;
         dispositivo._pingResult = 'error';
-        setTimeout(() => { dispositivo._pingResult = null; }, 4000);
+        this.cdr.detectChanges();
+        setTimeout(() => { dispositivo._pingResult = null; this.cdr.detectChanges(); }, 4000);
       },
     });
   }

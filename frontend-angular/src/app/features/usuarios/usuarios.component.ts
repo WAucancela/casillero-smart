@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { NgIf, NgFor, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api/api.service';
@@ -70,7 +70,7 @@ export class UsuariosComponent implements OnInit {
   readonly estadoColor   = ESTADO_COLOR;
   readonly estadoIcon    = ESTADO_ICON;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.cargar();
@@ -84,10 +84,12 @@ export class UsuariosComponent implements OnInit {
         this.usuarios  = data;
         this.aplicarFiltros();
         this.loading   = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.error   = err?.error?.detail ?? 'Error al cargar usuarios.';
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -138,8 +140,8 @@ export class UsuariosComponent implements OnInit {
     if (!this.usuarioSeleccionado) return;
     if (!confirm('¿Confirma dar de baja a este usuario? Se liberará su casillero.')) return;
     this.api.darBajaUsuario(this.usuarioSeleccionado.id).subscribe({
-      next: () => { this.cerrarDetalle(); this.toast('Usuario dado de baja.', 'warning'); this.cargar(); },
-      error: (err) => this.toast(err?.error?.detail ?? 'Error al dar de baja.', 'danger'),
+      next: () => { this.cerrarDetalle(); this.toast('Usuario dado de baja.', 'warning'); this.cargar(); this.cdr.detectChanges(); },
+      error: (err) => { this.toast(err?.error?.detail ?? 'Error al dar de baja.', 'danger'); this.cdr.detectChanges(); },
     });
   }
 
@@ -147,8 +149,8 @@ export class UsuariosComponent implements OnInit {
     if (!this.usuarioSeleccionado) return;
     if (!confirm('¿Eliminar este usuario permanentemente? Esta acción no se puede deshacer.')) return;
     this.api.eliminarUsuario(this.usuarioSeleccionado.id).subscribe({
-      next: () => { this.cerrarDetalle(); this.toast('Usuario eliminado permanentemente.', 'danger'); this.cargar(); },
-      error: (err) => this.toast(err?.error?.detail ?? 'Error al eliminar.', 'danger'),
+      next: () => { this.cerrarDetalle(); this.toast('Usuario eliminado permanentemente.', 'danger'); this.cargar(); this.cdr.detectChanges(); },
+      error: (err) => { this.toast(err?.error?.detail ?? 'Error al eliminar.', 'danger'); this.cdr.detectChanges(); },
     });
   }
 
@@ -177,7 +179,7 @@ export class UsuariosComponent implements OnInit {
         this.cargar();
       },
       error: (err) => this.toast(err?.error?.detail ?? 'Error al crear usuario.', 'danger'),
-      complete: () => { this.guardando = false; },
+      complete: () => { this.guardando = false; this.cdr.detectChanges(); },
     });
   }
 
@@ -200,8 +202,8 @@ export class UsuariosComponent implements OnInit {
     this.loadingCasilleros       = true;
     this.modalCasillero          = true;
     this.api.getCasillerosDisponibles().subscribe({
-      next: (data) => { this.casillerosDisponibles = data; this.loadingCasilleros = false; },
-      error: ()     => { this.loadingCasilleros = false; },
+      next: (data) => { this.casillerosDisponibles = data; this.loadingCasilleros = false; this.cdr.detectChanges(); },
+      error: ()     => { this.loadingCasilleros = false; this.cdr.detectChanges(); },
     });
   }
 
@@ -213,8 +215,9 @@ export class UsuariosComponent implements OnInit {
         this.cerrarDetalle();
         this.toast(`Casillero ${data.casillero_numero ?? ''} asignado correctamente.`, 'success');
         this.cargar();
+        this.cdr.detectChanges();
       },
-      error: (err) => this.toast(err?.error?.detail ?? 'Error al asignar.', 'danger'),
+      error: (err) => { this.toast(err?.error?.detail ?? 'Error al asignar.', 'danger'); this.cdr.detectChanges(); },
     });
   }
 
@@ -222,8 +225,8 @@ export class UsuariosComponent implements OnInit {
     if (!this.usuarioSeleccionado) return;
     if (!confirm('¿Quitar el casillero asignado a este usuario?')) return;
     this.api.liberarCasillero(this.usuarioSeleccionado.id).subscribe({
-      next: () => { this.cerrarDetalle(); this.toast('Casillero liberado.', 'warning'); this.cargar(); },
-      error: (err) => this.toast(err?.error?.detail ?? 'Error al liberar.', 'danger'),
+      next: () => { this.cerrarDetalle(); this.toast('Casillero liberado.', 'warning'); this.cargar(); this.cdr.detectChanges(); },
+      error: (err) => { this.toast(err?.error?.detail ?? 'Error al liberar.', 'danger'); this.cdr.detectChanges(); },
     });
   }
 
@@ -232,6 +235,6 @@ export class UsuariosComponent implements OnInit {
   toast(msg: string, tipo: string): void {
     this.toastMsg  = msg;
     this.toastTipo = tipo;
-    setTimeout(() => { this.toastMsg = ''; }, 4000);
+    setTimeout(() => { this.toastMsg = ''; this.cdr.detectChanges(); }, 4000);
   }
 }

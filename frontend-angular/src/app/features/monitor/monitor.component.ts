@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { NgIf, NgFor, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api/api.service';
@@ -64,7 +64,7 @@ export class MonitorComponent implements OnInit, OnDestroy {
   private pollEventosId: ReturnType<typeof setInterval>    | null = null;
   private pollTerminalesId: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.cargarTerminales();
@@ -82,8 +82,8 @@ export class MonitorComponent implements OnInit, OnDestroy {
 
   cargarTerminales(): void {
     this.api.getTerminales().subscribe({
-      next: (data) => { this.terminales = data; this.loadingTerminales = false; },
-      error: ()    => { this.loadingTerminales = false; },
+      next: (data) => { this.terminales = data; this.loadingTerminales = false; this.cdr.detectChanges(); },
+      error: ()    => { this.loadingTerminales = false; this.cdr.detectChanges(); },
     });
   }
 
@@ -122,9 +122,11 @@ export class MonitorComponent implements OnInit, OnDestroy {
         this.aplicarFiltros();
         this.alertas      = todos.filter(e => e.resultado !== 'exitoso').slice(0, 10);
         this.ultimoEvento = todos[0] ?? null;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.ultimoPoll = `Error: ${err?.message ?? 'sin conexión'}`;
+        this.cdr.detectChanges();
       },
     });
   }
