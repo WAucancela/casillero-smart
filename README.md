@@ -5,7 +5,7 @@
 ```
 casilleros/
 ├── backend/          ← Código FastAPI (del repo principal)
-├── frontend/         ← HTML AdminLTE compilado
+├── frontend-angular/ ← SPA Angular 22 (AdminLTE); nginx la compila con su Dockerfile
 ├── postgres/
 │   └── init.sql      ← Extensiones y permisos iniciales
 ├── mosquitto/
@@ -51,14 +51,18 @@ git clone https://github.com/tuempresa/casilleros.git
 cd casilleros
 ```
 
-### 2. Colocar los archivos en su lugar
+### 2. Verificar que el código esté en su lugar
 
 ```bash
 # El código del backend debe estar en ./backend/
-# El frontend compilado debe estar en ./frontend/
-ls backend/main.py      # ← debe existir
-ls frontend/login.html  # ← debe existir
+# El frontend Angular (fuente, sin compilar) debe estar en ./frontend-angular/
+ls backend/main.py            # ← debe existir
+ls frontend-angular/package.json  # ← debe existir
 ```
+
+El frontend se compila automáticamente: `docker compose build nginx` corre
+`npm ci && npm run build` dentro de `frontend-angular/Dockerfile` y sirve el
+resultado con nginx. No hace falta compilarlo ni copiarlo a mano.
 
 ### 3. Ejecutar el setup inicial
 
@@ -152,7 +156,7 @@ Internet / Red local
         │
         ▼ :80 (HTTP)
    ┌─────────┐
-   │  Nginx  │  Sirve frontend estático + proxy reverso
+   │  Nginx  │  Sirve build de Angular (SPA) + proxy reverso
    └────┬────┘
         │ red interna: casilleros_backend
    ┌────┴────┐
