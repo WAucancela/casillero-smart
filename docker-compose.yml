@@ -10,7 +10,7 @@ services:
   # ── PostgreSQL ───────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: casilleros-postgres
+    container_name: casillero-smart-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB:       ${POSTGRES_DB:-casilleros}
@@ -36,7 +36,7 @@ services:
   # ── Mosquitto MQTT ───────────────────────────────────────────
   mosquitto:
     image: eclipse-mosquitto:2.0
-    container_name: casilleros-mosquitto
+    container_name: casillero-smart-mosquitto
     restart: unless-stopped
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
@@ -60,7 +60,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: casilleros-backend
+    container_name: casillero-smart-backend
     restart: unless-stopped
     env_file: .env
     environment:
@@ -96,7 +96,7 @@ services:
     build:
       context: ./frontend-angular
       dockerfile: Dockerfile
-    container_name: casilleros-nginx
+    container_name: casillero-smart-nginx
     restart: unless-stopped
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -124,7 +124,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-    container_name: casilleros-migrate
+    container_name: casillero-smart-migrate
     restart: "no"
     command: ["sh", "-c", "cd /app/database && alembic upgrade head"]
     volumes:

@@ -218,7 +218,7 @@ infrastructure/
 **Los eventos llegan pero no abre la cerradura:**
 - Verificar que el broker MQTT está corriendo
 - Verificar que el usuario tiene casillero asignado (`casillero_id`)
-- Revisar los logs: `journalctl -u casilleros-backend -f`
+- Revisar los logs: `docker logs casillero-smart-backend -f`
 
 **El PIN del usuario no coincide:**
 - El PIN en el dispositivo ZKTeco debe ser igual al `id` del usuario en PostgreSQL

@@ -30,7 +30,7 @@ case "${1:-help}" in
     echo ""
     echo "═══ Uso de recursos ═══"
     docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" \
-      casilleros-backend casilleros-postgres casilleros-mosquitto casilleros-nginx 2>/dev/null || true
+      casillero-smart-backend casillero-smart-postgres casillero-smart-mosquitto casillero-smart-nginx 2>/dev/null || true
     ;;
   backup)
     mkdir -p "$BACKUP_DIR"
